@@ -26,7 +26,7 @@ final class ExtremePointGenerator {
 	 * The initial origin is always implicitly available and managed by the caller.
 	 */
 	Set<Position> pointsAfterPlacing(final PlacedPackage placed) {
-		final Set<Position> points = new LinkedHashSet<>(3);
+		final Set<Position> points = LinkedHashSet.newLinkedHashSet(3);
 		// Right of the package (along the length axis)
 		points.add(new Position(placed.endX(), placed.position().y(), placed.position().z()));
 		// Behind the package (along the width axis)
