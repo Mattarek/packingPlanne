@@ -5,6 +5,7 @@ import org.example.packing.domain.model.Vehicle;
 import org.example.packing.domain.model.Weight;
 import org.example.packing.infrastructure.persistence.entity.VehicleEntity;
 
+// Zmien na mapstract
 public final class VehiclePersistenceMapper {
 
 	private VehiclePersistenceMapper() {

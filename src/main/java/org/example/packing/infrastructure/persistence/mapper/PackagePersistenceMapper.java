@@ -5,6 +5,7 @@ import org.example.packing.domain.model.Package;
 import org.example.packing.domain.model.Weight;
 import org.example.packing.infrastructure.persistence.entity.PackageEntity;
 
+// Zmien na mapstract
 public final class PackagePersistenceMapper {
 
 	private PackagePersistenceMapper() {
