@@ -24,7 +24,9 @@ dependencies {
 
 	implementation("org.springframework.boot:spring-boot-liquibase")
 	implementation("org.liquibase:liquibase-core")
+	implementation("org.mapstruct:mapstruct:1.6.3")
 
+	annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
 	runtimeOnly("org.postgresql:postgresql")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")

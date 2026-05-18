@@ -4,22 +4,25 @@ import org.example.packing.domain.model.Dimensions;
 import org.example.packing.domain.model.Package;
 import org.example.packing.domain.model.Weight;
 import org.example.packing.infrastructure.persistence.entity.PackageEntity;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-// Zmien na mapstract
-public final class PackagePersistenceMapper {
+@Mapper(componentModel = "spring")
+public interface PackagePersistenceMapper {
 
-	private PackagePersistenceMapper() {
+	@Mapping(target = "dimensions", source = ".")
+	@Mapping(target = "weight", source = "weightKg")
+	Package toDomain(PackageEntity entity);
+
+	default Dimensions toDimensions(final PackageEntity entity) {
+		return new Dimensions(
+				entity.getLengthCm(),
+				entity.getWidthCm(),
+				entity.getHeightCm()
+		);
 	}
 
-	public static Package toDomain(final PackageEntity entity) {
-		return new Package(
-				entity.getId(),
-				new Dimensions(
-						entity.getLengthCm(),
-						entity.getWidthCm(),
-						entity.getHeightCm()
-				),
-				new Weight(entity.getWeightKg())
-		);
+	default Weight toWeight(final Double weightKg) {
+		return new Weight(weightKg);
 	}
 }

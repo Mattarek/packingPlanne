@@ -1,0 +1,30 @@
+<changeSet id="001-create-vehicules-table" author="marcin">
+    <createTable tableName="vehicules">
+
+        <column name="id" type="VARCHAR(255)">
+            <constraints primaryKey="true" nullable="false"/>
+        </column>
+
+        <column name="name" type="VARCHAR(255)">
+            <constraints nullable="false"/>
+        </column>
+
+        <column name="length_cm" type="DOUBLE">
+            <constraints nullable="false"/>
+        </column>
+
+        <column name="width_cm" type="DOUBLE">
+            <constraints nullable="false"/>
+        </column>
+
+        <column name="height_cm" type="DOUBLE">
+            <constraints nullable="false"/>
+        </column>
+
+        <column name="max_payload_kg" type="DOUBLE">
+            <constraints nullable="false"/>
+        </column>
+
+    </createTable>
+
+</changeSet>

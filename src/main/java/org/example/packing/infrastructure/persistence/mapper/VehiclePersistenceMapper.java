@@ -4,23 +4,25 @@ import org.example.packing.domain.model.Dimensions;
 import org.example.packing.domain.model.Vehicle;
 import org.example.packing.domain.model.Weight;
 import org.example.packing.infrastructure.persistence.entity.VehicleEntity;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-// Zmien na mapstract
-public final class VehiclePersistenceMapper {
+@Mapper(componentModel = "spring")
+public interface VehiclePersistenceMapper {
 
-	private VehiclePersistenceMapper() {
+	@Mapping(target = "dimensions", source = ".")
+	@Mapping(target = "maxPayload", source = "maxPayloadKg")
+	Vehicle toDomain(VehicleEntity entity);
+
+	default Dimensions toDimensions(final VehicleEntity entity) {
+		return new Dimensions(
+				entity.getLengthCm(),
+				entity.getWidthCm(),
+				entity.getHeightCm()
+		);
 	}
 
-	public static Vehicle toDomain(final VehicleEntity entity) {
-		return new Vehicle(
-				entity.getId(),
-				entity.getName(),
-				new Dimensions(
-						entity.getLengthCm(),
-						entity.getWidthCm(),
-						entity.getHeightCm()
-				),
-				new Weight(entity.getMaxPayloadKg())
-		);
+	default Weight toWeight(final Double weightKg) {
+		return new Weight(weightKg);
 	}
 }

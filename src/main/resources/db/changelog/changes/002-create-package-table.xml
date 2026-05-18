@@ -1,0 +1,27 @@
+<changeSet id="002-create-packages-table" author="marcin">
+
+    <createTable tableName="packages">
+
+        <column name="id" type="VARCHAR(255)">
+            <constraints primaryKey="true" nullable="false"/>
+        </column>
+
+        <column name="length_cm" type="DOUBLE">
+            <constraints nullable="false"/>
+        </column>
+
+        <column name="width_cm" type="DOUBLE">
+            <constraints nullable="false"/>
+        </column>
+
+        <column name="height_cm" type="DOUBLE">
+            <constraints nullable="false"/>
+        </column>
+
+        <column name="weight_kg" type="DOUBLE">
+            <constraints nullable="false"/>
+        </column>
+
+    </createTable>
+
+</changeSet>
