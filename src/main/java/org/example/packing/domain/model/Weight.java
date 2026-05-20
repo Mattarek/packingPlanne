@@ -36,7 +36,7 @@ public record Weight(double kilograms) implements Comparable<Weight> {
 		if (this == o) {
 			return true;
 		}
-		if (!(o instanceof Weight(double kilograms1))) {
+		if (!(o instanceof Weight(final double kilograms1))) {
 			return false;
 		}
 		return Double.compare(kilograms, kilograms1) == 0;

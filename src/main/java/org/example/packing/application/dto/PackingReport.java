@@ -15,7 +15,8 @@ public record PackingReport(
 		List<PackedVehicle> packedVehicles,
 		List<Package> unpackedPackages,
 		int totalPackagesIn,
-		long elapsedMillis) {
+		long elapsedMillis
+) {
 
 	public PackingReport {
 		Objects.requireNonNull(strategyName, "strategyName must not be null");

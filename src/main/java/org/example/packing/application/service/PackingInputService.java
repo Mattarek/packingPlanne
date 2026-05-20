@@ -1,8 +1,8 @@
 package org.example.packing.application.service;
 
-import org.example.packing.application.dto.PackingReport;
-import org.example.packing.domain.model.Package;
-import org.example.packing.domain.model.Vehicle;
+import org.example.packing.application.dto.PackingInputRequest;
+import org.example.packing.infrastructure.persistence.entity.PackageEntity;
+import org.example.packing.infrastructure.persistence.entity.VehicleEntity;
 import org.example.packing.infrastructure.persistence.mapper.PackagePersistenceMapper;
 import org.example.packing.infrastructure.persistence.mapper.VehiclePersistenceMapper;
 import org.example.packing.infrastructure.persistence.repository.PackageRepository;
@@ -11,35 +11,36 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
-public class PackingRunnerService {
+public class PackingInputService {
 
 	private final VehicleRepository vehicleRepository;
 	private final PackageRepository packageRepository;
 	private final VehiclePersistenceMapper vehicleMapper;
 	private final PackagePersistenceMapper packageMapper;
-	private final PackingService packingService;
 
-	public PackingRunnerService(
+	public PackingInputService(
 			final VehicleRepository vehicleRepository,
 			final PackageRepository packageRepository,
 			final VehiclePersistenceMapper vehicleMapper,
-			final PackagePersistenceMapper packageMapper,
-			final PackingService packingService
+			final PackagePersistenceMapper packageMapper
 	) {
 		this.vehicleRepository = vehicleRepository;
 		this.packageRepository = packageRepository;
 		this.vehicleMapper = vehicleMapper;
 		this.packageMapper = packageMapper;
-		this.packingService = packingService;
 	}
 
-	@Transactional(readOnly = true)
-	public PackingReport runPacking() {
-		final List<Vehicle> vehicles = vehicleMapper.toDomainList(vehicleRepository.findAll());
-		final List<Package> packages = packageMapper.toDomainList(packageRepository.findAll());
+	@Transactional
+	public void saveInput(final PackingInputRequest request) {
+		Objects.requireNonNull(request, "request must not be null");
 
-		return packingService.pack(packages, vehicles);
+		final List<VehicleEntity> vehicles = vehicleMapper.toEntityList(request.vehicles());
+		final List<PackageEntity> packages = packageMapper.toEntityList(request.packages());
+
+		vehicleRepository.saveAll(vehicles);
+		packageRepository.saveAll(packages);
 	}
 }

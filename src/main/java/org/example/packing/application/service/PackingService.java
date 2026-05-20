@@ -5,6 +5,7 @@ import org.example.packing.application.strategy.PackingStrategy;
 import org.example.packing.domain.exception.PackageTooLargeException;
 import org.example.packing.domain.model.Package;
 import org.example.packing.domain.model.Vehicle;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
@@ -22,6 +23,7 @@ import java.util.Objects;
  * The strategy is injected — clients can swap algorithms without changing this class
  * (Open/Closed Principle, Dependency Inversion).
  */
+@Service
 public final class PackingService {
 
 	private final PackingStrategy strategy;
@@ -38,9 +40,11 @@ public final class PackingService {
 	public PackingReport pack(final List<Package> packages, final List<Vehicle> vehicles) {
 		Objects.requireNonNull(packages, "packages must not be null");
 		Objects.requireNonNull(vehicles, "vehicles must not be null");
+
 		if (vehicles.isEmpty()) {
 			throw new IllegalArgumentException("At least one vehicle must be provided");
 		}
+
 		validateFeasibility(packages, vehicles);
 
 		final long start = System.nanoTime();
@@ -52,7 +56,8 @@ public final class PackingService {
 				result.packedVehicles(),
 				result.unpackedPackages(),
 				packages.size(),
-				elapsedMillis);
+				elapsedMillis
+		);
 	}
 
 	/**
@@ -67,10 +72,13 @@ public final class PackingService {
 					.filter(v -> pkg.weight().isLessThanOrEqualTo(v.maxPayload()))
 					.findFirst()
 					.orElse(null);
+
 			if (anyFit == null) {
 				throw new PackageTooLargeException(
-						pkg, vehicles.get(0),
-						"package does not fit in any provided vehicle");
+						pkg,
+						vehicles.get(0),
+						"package does not fit in any provided vehicle"
+				);
 			}
 		}
 	}
