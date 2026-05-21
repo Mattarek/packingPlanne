@@ -1,30 +1,38 @@
-<changeSet id="001-create-vehicules-table" author="marcin">
-    <createTable tableName="vehicules">
+<?xml version="1.0" encoding="UTF-8"?>
 
-        <column name="id" type="VARCHAR(255)">
-            <constraints primaryKey="true" nullable="false"/>
-        </column>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="
+            http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-        <column name="name" type="VARCHAR(255)">
-            <constraints nullable="false"/>
-        </column>
+    <changeSet id="001-create-vehicle-table" author="marcin">
+        <createTable tableName="vehicules">
+            <column name="id" type="VARCHAR(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
 
-        <column name="length_cm" type="DOUBLE">
-            <constraints nullable="false"/>
-        </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
 
-        <column name="width_cm" type="DOUBLE">
-            <constraints nullable="false"/>
-        </column>
+            <column name="length_cm" type="DOUBLE">
+                <constraints nullable="false"/>
+            </column>
 
-        <column name="height_cm" type="DOUBLE">
-            <constraints nullable="false"/>
-        </column>
+            <column name="width_cm" type="DOUBLE">
+                <constraints nullable="false"/>
+            </column>
 
-        <column name="max_payload_kg" type="DOUBLE">
-            <constraints nullable="false"/>
-        </column>
+            <column name="height_cm" type="DOUBLE">
+                <constraints nullable="false"/>
+            </column>
 
-    </createTable>
+            <column name="max_payload_kg" type="DOUBLE">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
 
-</changeSet>
+</databaseChangeLog>

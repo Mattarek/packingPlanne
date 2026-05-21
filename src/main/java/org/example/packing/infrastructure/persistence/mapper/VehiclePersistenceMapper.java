@@ -1,6 +1,7 @@
 package org.example.packing.infrastructure.persistence.mapper;
 
 import org.example.packing.application.dto.VehicleRequest;
+import org.example.packing.application.dto.VehicleResponse;
 import org.example.packing.domain.model.Dimensions;
 import org.example.packing.domain.model.Vehicle;
 import org.example.packing.domain.model.Weight;
@@ -35,6 +36,10 @@ public interface VehiclePersistenceMapper {
 				.map(this::toEntity)
 				.toList();
 	}
+
+	VehicleResponse toResponse(VehicleEntity entity);
+
+	List<VehicleResponse> toResponseList(List<VehicleEntity> entities);
 
 	default Dimensions toDimensions(final VehicleEntity entity) {
 		return new Dimensions(

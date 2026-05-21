@@ -1,6 +1,7 @@
 package org.example.packing.infrastructure.persistence.mapper;
 
 import org.example.packing.application.dto.PackageRequest;
+import org.example.packing.application.dto.PackageResponse;
 import org.example.packing.domain.model.Dimensions;
 import org.example.packing.domain.model.Package;
 import org.example.packing.domain.model.Weight;
@@ -42,6 +43,10 @@ public interface PackagePersistenceMapper {
 				entity.getHeightCm()
 		);
 	}
+
+	PackageResponse toResponse(PackageEntity entity);
+
+	List<PackageResponse> toResponseList(List<PackageEntity> entities);
 
 	default Weight toWeight(final double weightKg) {
 		return new Weight(weightKg);
