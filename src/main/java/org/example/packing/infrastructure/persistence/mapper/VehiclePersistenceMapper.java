@@ -24,10 +24,10 @@ public interface VehiclePersistenceMapper {
 		return new VehicleEntity(
 				request.id(),
 				request.name(),
-				request.lengthCm(),
-				request.widthCm(),
-				request.heightCm(),
-				request.maxPayloadKg()
+				request.length(),
+				request.width(),
+				request.height(),
+				request.maxPayload()
 		);
 	}
 

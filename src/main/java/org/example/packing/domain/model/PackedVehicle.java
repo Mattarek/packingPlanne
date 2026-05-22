@@ -109,6 +109,30 @@ public final class PackedVehicle {
 		currentWeight = currentWeight.add(pkg.weight());
 	}
 
+	public Vehicle getVehicle() {
+		return vehicle;
+	}
+
+	public List<PlacedPackage> getPlacedPackages() {
+		return Collections.unmodifiableList(placedPackages);
+	}
+
+	public Weight getCurrentWeight() {
+		return currentWeight;
+	}
+
+	public double getCurrentVolume() {
+		return currentVolume();
+	}
+
+	public double getVolumeUtilization() {
+		return volumeUtilization();
+	}
+
+	public double getWeightUtilization() {
+		return weightUtilization();
+	}
+
 	@Override
 	public String toString() {
 		return "PackedVehicle[%s, packed=%d, weight=%s/%s, vol=%.1f%%]"

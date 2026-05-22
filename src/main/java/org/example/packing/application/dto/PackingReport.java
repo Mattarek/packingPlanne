@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
+ * Suitable for logging, UI presentation, or API responses.
  * Read-only report describing the outcome of a packing operation.
  * Suitable for logging, UI presentation, or API responses.
  */
