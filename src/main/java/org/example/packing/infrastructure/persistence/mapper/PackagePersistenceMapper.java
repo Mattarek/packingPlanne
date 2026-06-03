@@ -15,7 +15,7 @@ import java.util.List;
 public interface PackagePersistenceMapper {
 
 	@Mapping(target = "dimensions", source = ".")
-	@Mapping(target = "weight", source = "weightKg")
+	@Mapping(target = "weight", source = "weight")
 	Package toDomain(PackageEntity entity);
 
 	List<Package> toDomainList(List<PackageEntity> entities);
@@ -23,10 +23,10 @@ public interface PackagePersistenceMapper {
 	default PackageEntity toEntity(final PackageRequest request) {
 		return new PackageEntity(
 				request.id(),
-				request.lengthCm(),
-				request.widthCm(),
-				request.heightCm(),
-				request.weightKg()
+				request.length(),
+				request.width(),
+				request.height(),
+				request.weight()
 		);
 	}
 
@@ -38,9 +38,9 @@ public interface PackagePersistenceMapper {
 
 	default Dimensions toDimensions(final PackageEntity entity) {
 		return new Dimensions(
-				entity.getLengthCm(),
-				entity.getWidthCm(),
-				entity.getHeightCm()
+				entity.getLength(),
+				entity.getWidth(),
+				entity.getHeight()
 		);
 	}
 

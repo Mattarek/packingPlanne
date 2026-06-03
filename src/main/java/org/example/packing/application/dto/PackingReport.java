@@ -25,13 +25,13 @@ public record PackingReport(
 		unpackedPackages = List.copyOf(unpackedPackages);
 	}
 
-	public int packedPackagesCount() {
+	public int getPackedPackagesCount() {
 		return packedVehicles.stream()
 				.mapToInt(v -> v.placedPackages().size())
 				.sum();
 	}
 
-	public int vehiclesUsed() {
+	public int getVehiclesUsed() {
 		return (int) packedVehicles.stream()
 				.filter(v -> !v.placedPackages().isEmpty())
 				.count();
@@ -41,7 +41,7 @@ public record PackingReport(
 		return unpackedPackages.isEmpty();
 	}
 
-	public double averageVolumeUtilization() {
+	public double getAverageVolumeUtilization() {
 		return packedVehicles.stream()
 				.filter(v -> !v.placedPackages().isEmpty())
 				.mapToDouble(PackedVehicle::volumeUtilization)
@@ -49,7 +49,7 @@ public record PackingReport(
 				.orElse(0.0);
 	}
 
-	public double averageWeightUtilization() {
+	public double getAverageWeightUtilization() {
 		return packedVehicles.stream()
 				.filter(v -> !v.placedPackages().isEmpty())
 				.mapToDouble(PackedVehicle::weightUtilization)

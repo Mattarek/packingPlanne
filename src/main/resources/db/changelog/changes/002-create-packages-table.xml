@@ -13,19 +13,19 @@
                 <constraints primaryKey="true" nullable="false"/>
             </column>
 
-            <column name="length_cm" type="DOUBLE">
+            <column name="length" type="DOUBLE">
                 <constraints nullable="false"/>
             </column>
 
-            <column name="width_cm" type="DOUBLE">
+            <column name="width" type="DOUBLE">
                 <constraints nullable="false"/>
             </column>
 
-            <column name="height_cm" type="DOUBLE">
+            <column name="height" type="DOUBLE">
                 <constraints nullable="false"/>
             </column>
 
-            <column name="weight_kg" type="DOUBLE">
+            <column name="weight" type="DOUBLE">
                 <constraints nullable="false"/>
             </column>
         </createTable>

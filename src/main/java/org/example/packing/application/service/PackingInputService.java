@@ -2,7 +2,7 @@ package org.example.packing.application.service;
 
 import org.example.packing.application.dto.PackingInputRequest;
 import org.example.packing.infrastructure.persistence.entity.PackageEntity;
-import org.example.packing.infrastructure.persistence.entity.VehicleEntity;
+import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
 import org.example.packing.infrastructure.persistence.mapper.PackagePersistenceMapper;
 import org.example.packing.infrastructure.persistence.mapper.VehiclePersistenceMapper;
 import org.example.packing.infrastructure.persistence.repository.PackageRepository;
@@ -37,7 +37,7 @@ public class PackingInputService {
 	public void saveInput(final PackingInputRequest request) {
 		Objects.requireNonNull(request, "request must not be null");
 
-		final List<VehicleEntity> vehicles = vehicleMapper.toEntityList(request.vehicles());
+		final List<VehiclesEntity> vehicles = vehicleMapper.toEntityList(request.vehicles());
 		final List<PackageEntity> packages = packageMapper.toEntityList(request.packages());
 
 		vehicleRepository.saveAll(vehicles);

@@ -2,7 +2,7 @@ package org.example.packing.application.service;
 
 import org.example.packing.application.dto.VehicleRequest;
 import org.example.packing.application.dto.VehicleResponse;
-import org.example.packing.infrastructure.persistence.entity.VehicleEntity;
+import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
 import org.example.packing.infrastructure.persistence.mapper.VehiclePersistenceMapper;
 import org.example.packing.infrastructure.persistence.repository.VehicleRepository;
 import org.springframework.stereotype.Service;
@@ -26,13 +26,13 @@ public class VehicleService {
 
 	@Transactional
 	public void createVehicle(final VehicleRequest request) {
-		final VehicleEntity entity = vehicleMapper.toEntity(request);
+		final VehiclesEntity entity = vehicleMapper.toEntity(request);
 		vehicleRepository.save(entity);
 	}
 
 	@Transactional
 	public void createVehicles(final List<VehicleRequest> vehicles) {
-		final List<VehicleEntity> entities = vehicleMapper.toEntityList(vehicles);
+		final List<VehiclesEntity> entities = vehicleMapper.toEntityList(vehicles);
 		vehicleRepository.saveAll(entities);
 	}
 

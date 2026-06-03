@@ -46,6 +46,10 @@ public final class PackedVehicle {
 		return new Weight(vehicle.maxPayload().kilograms() - currentWeight.kilograms());
 	}
 
+	public Weight getRemainingPayload() {
+		return remainingPayload();
+	}
+
 	public double currentVolume() {
 		return placedPackages.stream()
 				.mapToDouble(p -> p.pkg().volume())

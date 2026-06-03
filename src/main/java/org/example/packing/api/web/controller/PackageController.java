@@ -28,6 +28,11 @@ public class PackageController {
 		packageService.createPackage(request);
 	}
 
+	@PostMapping("/create")
+	public void createPackages(@RequestBody final List<PackageRequest> request) {
+		packageService.createPackages(request);
+	}
+
 	@GetMapping
 	public List<PackageResponse> getPackages() {
 		return packageService.getPackages();

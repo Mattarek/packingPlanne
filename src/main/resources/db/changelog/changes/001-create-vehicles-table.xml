@@ -7,8 +7,8 @@
             http://www.liquibase.org/xml/ns/dbchangelog
             https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="001-create-vehicle-table" author="marcin">
-        <createTable tableName="vehicules">
+    <changeSet id="001-create-vehicles-table" author="marcin">
+        <createTable tableName="vehicles">
             <column name="id" type="VARCHAR(255)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -17,19 +17,19 @@
                 <constraints nullable="false"/>
             </column>
 
-            <column name="length_cm" type="DOUBLE">
+            <column name="length" type="DOUBLE">
                 <constraints nullable="false"/>
             </column>
 
-            <column name="width_cm" type="DOUBLE">
+            <column name="width" type="DOUBLE">
                 <constraints nullable="false"/>
             </column>
 
-            <column name="height_cm" type="DOUBLE">
+            <column name="height" type="DOUBLE">
                 <constraints nullable="false"/>
             </column>
 
-            <column name="max_payload_kg" type="DOUBLE">
+            <column name="max_payload" type="DOUBLE">
                 <constraints nullable="false"/>
             </column>
         </createTable>

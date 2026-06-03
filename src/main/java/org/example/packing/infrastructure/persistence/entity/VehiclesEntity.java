@@ -5,37 +5,45 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "packages")
-public class PackageEntity {
+@Table(name = "vehicles")
+public class VehiclesEntity {
 
 	@Id
 	private String id;
+
+	private String name;
 
 	private double length;
 	private double width;
 	private double height;
 
-	private double weight;
+	private double maxPayload;
 
-	protected PackageEntity() {
+	protected VehiclesEntity() {
 	}
 
-	public PackageEntity(
+	public VehiclesEntity(
 			final String id,
+			final String name,
 			final double length,
 			final double width,
 			final double height,
-			final double weight
+			final double maxPayload
 	) {
 		this.id = id;
+		this.name = name;
 		this.length = length;
 		this.width = width;
 		this.height = height;
-		this.weight = weight;
+		this.maxPayload = maxPayload;
 	}
 
 	public String getId() {
 		return id;
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	public double getLength() {
@@ -50,7 +58,7 @@ public class PackageEntity {
 		return height;
 	}
 
-	public double getWeight() {
-		return weight;
+	public double getMaxPayload() {
+		return maxPayload;
 	}
 }

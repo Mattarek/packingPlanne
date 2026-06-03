@@ -39,22 +39,10 @@ public class PackingRunnerService {
 	public PackingReport runPacking() {
 		final var vehicleEntities = vehicleRepository.findAll();
 		final var packageEntities = packageRepository.findAll();
-
-		System.out.println("VEHICLE ENTITIES SIZE = " + vehicleEntities.size());
-		System.out.println("VEHICLE ENTITIES = " + vehicleEntities);
-
-		System.out.println("PACKAGE ENTITIES SIZE = " + packageEntities.size());
-		System.out.println("PACKAGE ENTITIES = " + packageEntities);
-
+		
 		final List<Vehicle> vehicles = vehicleMapper.toDomainList(vehicleEntities);
 		final List<Package> packages =
 				packageMapper.toDomainList(packageEntities);
-
-		System.out.println("DOMAIN VEHICLES SIZE = " + vehicles.size());
-		System.out.println("DOMAIN VEHICLES = " + vehicles);
-
-		System.out.println("DOMAIN PACKAGES SIZE = " + packages.size());
-		System.out.println("DOMAIN PACKAGES = " + packages);
 
 		return packingService.pack(packages, vehicles);
 	}

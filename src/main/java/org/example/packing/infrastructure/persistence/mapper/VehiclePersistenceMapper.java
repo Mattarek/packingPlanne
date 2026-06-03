@@ -5,7 +5,7 @@ import org.example.packing.application.dto.VehicleResponse;
 import org.example.packing.domain.model.Dimensions;
 import org.example.packing.domain.model.Vehicle;
 import org.example.packing.domain.model.Weight;
-import org.example.packing.infrastructure.persistence.entity.VehicleEntity;
+import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -15,13 +15,13 @@ import java.util.List;
 public interface VehiclePersistenceMapper {
 
 	@Mapping(target = "cargoArea", source = ".")
-	@Mapping(target = "maxPayload", source = "maxPayloadKg")
-	Vehicle toDomain(VehicleEntity entity);
+	@Mapping(target = "maxPayload", source = "maxPayload")
+	Vehicle toDomain(VehiclesEntity entity);
 
-	List<Vehicle> toDomainList(List<VehicleEntity> entities);
+	List<Vehicle> toDomainList(List<VehiclesEntity> entities);
 
-	default VehicleEntity toEntity(final VehicleRequest request) {
-		return new VehicleEntity(
+	default VehiclesEntity toEntity(final VehicleRequest request) {
+		return new VehiclesEntity(
 				request.id(),
 				request.name(),
 				request.length(),
@@ -31,21 +31,25 @@ public interface VehiclePersistenceMapper {
 		);
 	}
 
-	default List<VehicleEntity> toEntityList(final List<VehicleRequest> requests) {
+	default List<VehiclesEntity> toEntityList(final List<VehicleRequest> requests) {
 		return requests.stream()
 				.map(this::toEntity)
 				.toList();
 	}
 
-	VehicleResponse toResponse(VehicleEntity entity);
+	@Mapping(target = "length", source = "length")
+	@Mapping(target = "width", source = "width")
+	@Mapping(target = "height", source = "height")
+	@Mapping(target = "maxPayload", source = "maxPayload")
+	VehicleResponse toResponse(VehiclesEntity entity);
 
-	List<VehicleResponse> toResponseList(List<VehicleEntity> entities);
+	List<VehicleResponse> toResponseList(List<VehiclesEntity> entities);
 
-	default Dimensions toDimensions(final VehicleEntity entity) {
+	default Dimensions toDimensions(final VehiclesEntity entity) {
 		return new Dimensions(
-				entity.getLengthCm(),
-				entity.getWidthCm(),
-				entity.getHeightCm()
+				entity.getLength(),
+				entity.getWidth(),
+				entity.getHeight()
 		);
 	}
 

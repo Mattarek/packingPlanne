@@ -30,6 +30,12 @@ public class PackageService {
 		packageRepository.save(entity);
 	}
 
+	@Transactional
+	public void createPackages(final List<PackageRequest> requests) {
+		final List<PackageEntity> entities = requests.stream().map(packageMapper::toEntity).toList();
+		packageRepository.saveAll(entities);
+	}
+
 	@Transactional(readOnly = true)
 	public List<PackageResponse> getPackages() {
 		return packageMapper.toResponseList(packageRepository.findAll());
