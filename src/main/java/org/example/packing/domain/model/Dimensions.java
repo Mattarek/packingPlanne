@@ -11,14 +11,21 @@ import java.util.Objects;
  *   <li>Object is immutable — safe for concurrent use</li>
  * </ul>
  */
+
 public record Dimensions(double length, double width, double height) {
 
 	public Dimensions {
-		if (length <= 0 || width <= 0 || height <= 0) {
+		if (!isPositiveFinite(length) || !isPositiveFinite(width) || !isPositiveFinite(height)) {
 			throw new IllegalArgumentException(
-					"All dimensions must be positive. Got: l=%.2f w=%.2f h=%.2f"
+					"All dimensions must be positive finite numbers. Got: l=%.2f w=%.2f h=%.2f"
 							.formatted(length, width, height));
 		}
+	}
+
+	private static boolean isPositiveFinite(final double value) {
+		return value > 0
+				&& !Double.isNaN(value)
+				&& !Double.isInfinite(value);
 	}
 
 	public double volume() {
