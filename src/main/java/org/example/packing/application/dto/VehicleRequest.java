@@ -1,7 +1,9 @@
 package org.example.packing.application.dto;
 
+import java.util.UUID;
+
 public record VehicleRequest(
-		String id,
+		UUID id,
 		String name,
 		double length,
 		double width,

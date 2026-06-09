@@ -6,10 +6,15 @@ import org.example.packing.application.dto.PackageResponse;
 import org.example.packing.infrastructure.persistence.entity.PackageEntity;
 import org.example.packing.infrastructure.persistence.mapper.PackagePersistenceMapper;
 import org.example.packing.infrastructure.persistence.repository.PackageRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class PackageService {
@@ -26,40 +31,48 @@ public class PackageService {
 	}
 
 	@Transactional
-	public void createPackage(final PackageRequest request) {
+	public PackageResponse createPackage(final PackageRequest request) {
 		final PackageEntity entity = packageMapper.toEntity(request);
-		packageRepository.save(entity);
+		final PackageEntity saved = packageRepository.save(entity);
+
+		return packageMapper.toResponse(saved);
 	}
 
 	@Transactional
-	public void createPackages(final List<PackageRequest> requests) {
-		final List<PackageEntity> entities = requests.stream().map(packageMapper::toEntity).toList();
-		packageRepository.saveAll(entities);
+	public List<PackageResponse> createPackages(final List<PackageRequest> requests) {
+		final List<PackageEntity> entities = packageMapper.toEntityList(requests);
+		final List<PackageEntity> savedEntities = packageRepository.saveAll(entities);
+
+		return packageMapper.toResponseList(savedEntities);
 	}
 
 	@Transactional(readOnly = true)
-	public List<PackageResponse> getPackages() {
-		return packageMapper.toResponseList(packageRepository.findAll());
+	public Page<PackageResponse> getPackages(final int page, final int size) {
+		final Pageable pageable = PageRequest.of(
+				page,
+				size,
+				Sort.by("id").ascending()
+		);
+
+		return packageRepository.findAll(pageable)
+				.map(packageMapper::toResponse);
 	}
 
 	@Transactional(readOnly = true)
-	public PackageResponse getPackage(final String id) {
-		return packageRepository.findById(id)
+	public PackageResponse getPackage(final UUID id) {
+		return packageRepository.findById(id.toString())
 				.map(packageMapper::toResponse)
 				.orElseThrow(() -> new EntityNotFoundException("Package not found: " + id));
 	}
 
 	@Transactional
-	public void deletePackage(final String id) {
-		if (!packageRepository.existsById(id)) {
-			throw new IllegalArgumentException("Package not found: " + id);
+	public void deletePackage(final UUID id) {
+		final String packageId = id.toString();
+
+		if (!packageRepository.existsById(packageId)) {
+			throw new EntityNotFoundException("Package not found: " + packageId);
 		}
 
-		packageRepository.deleteById(id);
-	}
-
-	@Transactional
-	public void deleteAllPackages() {
-		packageRepository.deleteAll();
+		packageRepository.deleteById(packageId);
 	}
 }

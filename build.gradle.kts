@@ -20,8 +20,8 @@ repositories {
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
+	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-
 	implementation("org.springframework.boot:spring-boot-liquibase")
 	implementation("org.liquibase:liquibase-core")
 	implementation("org.mapstruct:mapstruct:1.5.5.Final")

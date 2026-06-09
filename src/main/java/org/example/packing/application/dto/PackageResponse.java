@@ -1,7 +1,9 @@
 package org.example.packing.application.dto;
 
+import java.util.UUID;
+
 public record PackageResponse(
-		String id,
+		UUID id,
 		double length,
 		double width,
 		double height,
