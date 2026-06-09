@@ -1,4 +1,4 @@
-package org.example.packing.api.web.controller;
+package org.example.packing.application.controller;
 
 import org.example.packing.application.dto.PackingReport;
 import org.example.packing.application.dto.PackingRunResponse;

@@ -20,40 +20,17 @@ public interface VehiclePersistenceMapper {
 
 	List<Vehicle> toDomainList(List<VehiclesEntity> entities);
 
-	default VehiclesEntity toEntity(final VehicleRequest request) {
-		return new VehiclesEntity(
-				request.id(),
-				request.name(),
-				request.length(),
-				request.width(),
-				request.height(),
-				request.maxPayload()
-		);
-	}
+	VehiclesEntity toEntity(VehicleRequest request);
 
-	default List<VehiclesEntity> toEntityList(final List<VehicleRequest> requests) {
-		return requests.stream()
-				.map(this::toEntity)
-				.toList();
-	}
+	List<VehiclesEntity> toEntityList(final List<VehicleRequest> requests);
 
-	@Mapping(target = "length", source = "length")
-	@Mapping(target = "width", source = "width")
-	@Mapping(target = "height", source = "height")
-	@Mapping(target = "maxPayload", source = "maxPayload")
 	VehicleResponse toResponse(VehiclesEntity entity);
 
 	List<VehicleResponse> toResponseList(List<VehiclesEntity> entities);
 
-	default Dimensions toDimensions(final VehiclesEntity entity) {
-		return new Dimensions(
-				entity.getLength(),
-				entity.getWidth(),
-				entity.getHeight()
-		);
-	}
+	Dimensions toDimensions(VehiclesEntity entity);
 
-	default Weight toWeight(final double weightKg) {
-		return new Weight(weightKg);
+	default Weight toWeight(final double kilograms) {
+		return new Weight(kilograms);
 	}
 }

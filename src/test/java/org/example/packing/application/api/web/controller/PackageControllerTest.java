@@ -1,6 +1,6 @@
 package org.example.packing.application.api.web.controller;
 
-import org.example.packing.api.web.controller.PackageController;
+import org.example.packing.application.controller.PackageController;
 import org.example.packing.application.dto.PackageRequest;
 import org.example.packing.application.dto.PackageResponse;
 import org.example.packing.application.service.PackageService;

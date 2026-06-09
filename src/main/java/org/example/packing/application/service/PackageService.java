@@ -1,5 +1,6 @@
 package org.example.packing.application.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.example.packing.application.dto.PackageRequest;
 import org.example.packing.application.dto.PackageResponse;
 import org.example.packing.infrastructure.persistence.entity.PackageEntity;
@@ -45,7 +46,7 @@ public class PackageService {
 	public PackageResponse getPackage(final String id) {
 		return packageRepository.findById(id)
 				.map(packageMapper::toResponse)
-				.orElseThrow(() -> new IllegalArgumentException("Package not found: " + id));
+				.orElseThrow(() -> new EntityNotFoundException("Package not found: " + id));
 	}
 
 	@Transactional

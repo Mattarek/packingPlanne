@@ -1,4 +1,4 @@
-package org.example.packing.api.web.controller;
+package org.example.packing.application.controller;
 
 import org.example.packing.application.dto.VehicleRequest;
 import org.example.packing.application.dto.VehicleResponse;
@@ -23,11 +23,6 @@ public class VehicleController {
 	}
 
 	@PostMapping
-	public void createVehicle(@RequestBody final VehicleRequest request) {
-		vehicleService.createVehicle(request);
-	}
-
-	@PostMapping("/create")
 	public void createVehicles(@RequestBody final List<VehicleRequest> requests) {
 		vehicleService.createVehicles(requests);
 	}
@@ -42,7 +37,7 @@ public class VehicleController {
 		return vehicleService.getVehicle(id);
 	}
 
-	@DeleteMapping("/{id}")
+	@DeleteMapping("/{id}") // Zmienic to na uuid, obecnie ze stringa
 	public void deleteVehicle(@PathVariable final String id) {
 		vehicleService.deleteVehicle(id);
 	}

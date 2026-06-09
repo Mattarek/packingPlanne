@@ -13,42 +13,26 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface PackagePersistenceMapper {
-
-	@Mapping(target = "dimensions", source = ".")
+	@Mapping(target = "dimensions", source = "entity")
 	@Mapping(target = "weight", source = "weight")
 	Package toDomain(PackageEntity entity);
 
 	List<Package> toDomainList(List<PackageEntity> entities);
 
-	default PackageEntity toEntity(final PackageRequest request) {
-		return new PackageEntity(
-				request.id(),
-				request.length(),
-				request.width(),
-				request.height(),
-				request.weight()
-		);
-	}
+	PackageEntity toEntity(PackageRequest request);
 
-	default List<PackageEntity> toEntityList(final List<PackageRequest> requests) {
-		return requests.stream()
-				.map(this::toEntity)
-				.toList();
-	}
+	List<PackageEntity> toEntityList(List<PackageRequest> requests);
 
-	default Dimensions toDimensions(final PackageEntity entity) {
-		return new Dimensions(
-				entity.getLength(),
-				entity.getWidth(),
-				entity.getHeight()
-		);
-	}
+	@Mapping(target = "length", source = "length")
+	@Mapping(target = "width", source = "width")
+	@Mapping(target = "height", source = "height")
+	Dimensions toDimensions(PackageEntity entity);
 
 	PackageResponse toResponse(PackageEntity entity);
 
 	List<PackageResponse> toResponseList(List<PackageEntity> entities);
 
-	default Weight toWeight(final double weightKg) {
-		return new Weight(weightKg);
+	default Weight toWeight(final double kilograms) {
+		return new Weight(kilograms);
 	}
 }

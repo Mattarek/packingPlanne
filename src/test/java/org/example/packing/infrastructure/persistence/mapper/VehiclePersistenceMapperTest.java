@@ -5,7 +5,6 @@ import org.example.packing.application.dto.VehicleResponse;
 import org.example.packing.domain.model.Vehicle;
 import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
 import org.junit.jupiter.api.Test;
-import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 
@@ -13,8 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class VehiclePersistenceMapperTest {
 
-	private final VehiclePersistenceMapper mapper =
-			Mappers.getMapper(VehiclePersistenceMapper.class);
+	private final VehiclePersistenceMapper mapper = new VehiclePersistenceMapperImpl();
 
 	@Test
 	void shouldMapRequestToEntity() {
