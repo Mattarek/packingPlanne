@@ -2,13 +2,19 @@ package org.example.packing.application.service;
 
 import org.example.packing.application.dto.VehicleRequest;
 import org.example.packing.application.dto.VehicleResponse;
+import org.example.packing.domain.exception.VehicleNotFoundException;
 import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
 import org.example.packing.infrastructure.persistence.mapper.VehiclePersistenceMapper;
 import org.example.packing.infrastructure.persistence.repository.VehicleRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class VehicleService {
@@ -25,40 +31,38 @@ public class VehicleService {
 	}
 
 	@Transactional
-	public void createVehicle(final VehicleRequest request) {
-		final VehiclesEntity entity = vehicleMapper.toEntity(request);
-		vehicleRepository.save(entity);
-	}
-
-	@Transactional
-	public void createVehicles(final List<VehicleRequest> vehicles) {
+	public List<VehicleResponse> createVehicles(final List<VehicleRequest> vehicles) {
 		final List<VehiclesEntity> entities = vehicleMapper.toEntityList(vehicles);
-		vehicleRepository.saveAll(entities);
+		final List<VehiclesEntity> savedEntities = vehicleRepository.saveAll(entities);
+
+		return vehicleMapper.toResponseList(savedEntities);
 	}
 
 	@Transactional(readOnly = true)
-	public List<VehicleResponse> getVehicles() {
-		return vehicleMapper.toResponseList(vehicleRepository.findAll());
+	public Page<VehicleResponse> getVehicles(final int page, final int size) {
+		final Pageable pageable = PageRequest.of(
+				page,
+				size,
+				Sort.by("id").ascending()
+		);
+
+		return vehicleRepository.findAll(pageable)
+				.map(vehicleMapper::toResponse);
 	}
 
 	@Transactional(readOnly = true)
-	public VehicleResponse getVehicle(final String id) {
-		return vehicleRepository.findById(id)
+	public VehicleResponse getVehicle(final UUID id) {
+		return vehicleRepository.findById(id.toString())
 				.map(vehicleMapper::toResponse)
-				.orElseThrow(() -> new IllegalArgumentException("Vehicle not found: " + id));
+				.orElseThrow(() -> new VehicleNotFoundException(id));
 	}
 
 	@Transactional
-	public void deleteVehicle(final String id) {
-		if (!vehicleRepository.existsById(id)) {
-			throw new IllegalArgumentException("Vehicle not found: " + id);
+	public void deleteVehicle(final UUID id) {
+		if (!vehicleRepository.existsById(id.toString())) {
+			throw new VehicleNotFoundException(id);
 		}
 
-		vehicleRepository.deleteById(id);
-	}
-
-	@Transactional
-	public void deleteAllVehicles() {
-		vehicleRepository.deleteAll();
+		vehicleRepository.deleteById(id.toString());
 	}
 }

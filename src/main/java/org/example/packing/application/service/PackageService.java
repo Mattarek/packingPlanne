@@ -31,14 +31,6 @@ public class PackageService {
 	}
 
 	@Transactional
-	public PackageResponse createPackage(final PackageRequest request) {
-		final PackageEntity entity = packageMapper.toEntity(request);
-		final PackageEntity saved = packageRepository.save(entity);
-
-		return packageMapper.toResponse(saved);
-	}
-
-	@Transactional
 	public List<PackageResponse> createPackages(final List<PackageRequest> requests) {
 		final List<PackageEntity> entities = packageMapper.toEntityList(requests);
 		final List<PackageEntity> savedEntities = packageRepository.saveAll(entities);
@@ -51,7 +43,7 @@ public class PackageService {
 		final Pageable pageable = PageRequest.of(
 				page,
 				size,
-				Sort.by("id").ascending()
+				Sort.by("id")
 		);
 
 		return packageRepository.findAll(pageable)

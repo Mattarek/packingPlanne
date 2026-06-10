@@ -4,12 +4,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "vehicles")
 public class VehiclesEntity {
 
 	@Id
-	private String id;
+	private UUID id;
 
 	private String name;
 
@@ -23,7 +25,7 @@ public class VehiclesEntity {
 	}
 
 	public VehiclesEntity(
-			final String id,
+			final UUID id,
 			final String name,
 			final double length,
 			final double width,
@@ -38,7 +40,7 @@ public class VehiclesEntity {
 		this.maxPayload = maxPayload;
 	}
 
-	public String getId() {
+	public UUID getId() {
 		return id;
 	}
 

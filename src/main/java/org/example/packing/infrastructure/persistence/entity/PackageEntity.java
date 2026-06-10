@@ -4,12 +4,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "packages")
 public class PackageEntity {
 
 	@Id
-	private String id;
+	private UUID id;
 
 	private double length;
 	private double width;
@@ -21,7 +23,7 @@ public class PackageEntity {
 	}
 
 	public PackageEntity(
-			final String id,
+			final UUID id,
 			final double length,
 			final double width,
 			final double height,
@@ -34,7 +36,7 @@ public class PackageEntity {
 		this.weight = weight;
 	}
 
-	public String getId() {
+	public UUID getId() {
 		return id;
 	}
 

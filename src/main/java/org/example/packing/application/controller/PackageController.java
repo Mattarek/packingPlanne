@@ -81,7 +81,7 @@ public class PackageController {
 		return ResponseEntity.ok(
 				ApiResponse.success(
 						"Package deleted successfully.",
-						new DeleteResponse(id.toString())
+						new DeleteResponse(id)
 				)
 		);
 	}
