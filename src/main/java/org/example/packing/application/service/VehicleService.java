@@ -52,17 +52,17 @@ public class VehicleService {
 
 	@Transactional(readOnly = true)
 	public VehicleResponse getVehicle(final UUID id) {
-		return vehicleRepository.findById(id.toString())
+		return vehicleRepository.findById(id)
 				.map(vehicleMapper::toResponse)
 				.orElseThrow(() -> new VehicleNotFoundException(id));
 	}
 
 	@Transactional
 	public void deleteVehicle(final UUID id) {
-		if (!vehicleRepository.existsById(id.toString())) {
+		if (!vehicleRepository.existsById(id)) {
 			throw new VehicleNotFoundException(id);
 		}
 
-		vehicleRepository.deleteById(id.toString());
+		vehicleRepository.deleteById(id);
 	}
 }

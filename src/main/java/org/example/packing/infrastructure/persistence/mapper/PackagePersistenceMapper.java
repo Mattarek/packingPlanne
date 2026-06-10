@@ -19,8 +19,9 @@ public interface PackagePersistenceMapper {
 
 	List<Package> toDomainList(List<PackageEntity> entities);
 
+	@Mapping(target = "id", ignore = true)
 	PackageEntity toEntity(PackageRequest request);
-
+	
 	List<PackageEntity> toEntityList(List<PackageRequest> requests);
 
 	@Mapping(target = "length", source = "length")

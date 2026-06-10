@@ -20,8 +20,9 @@ public interface VehiclePersistenceMapper {
 
 	List<Vehicle> toDomainList(List<VehiclesEntity> entities);
 
+	@Mapping(target = "id", ignore = true)
 	VehiclesEntity toEntity(VehicleRequest request);
-
+	
 	List<VehiclesEntity> toEntityList(final List<VehicleRequest> requests);
 
 	VehicleResponse toResponse(VehiclesEntity entity);

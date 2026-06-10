@@ -1,6 +1,5 @@
-package org.example.packing.application.api.web.controller;
+package org.example.packing.application.controller;
 
-import org.example.packing.application.controller.VehicleController;
 import org.example.packing.application.dto.VehicleRequest;
 import org.example.packing.application.dto.VehicleResponse;
 import org.example.packing.application.service.VehicleService;

@@ -4,6 +4,8 @@ import org.example.packing.infrastructure.persistence.entity.PackageEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.UUID;
+
 @Repository
-public interface PackageRepository extends JpaRepository<PackageEntity, String> {
+public interface PackageRepository extends JpaRepository<PackageEntity, UUID> {
 }

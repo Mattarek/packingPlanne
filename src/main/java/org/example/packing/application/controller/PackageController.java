@@ -26,8 +26,8 @@ import java.util.UUID;
 @RequestMapping("/api/packages")
 public class PackageController {
 
-	private final String defaultPage = "0";
-	private final String defaultSize = "20";
+	private static final String DEFAULT_PAGE = "0";
+	private static final String DEFAULT_SIZE = "20";
 
 	private final PackageService packageService;
 
@@ -48,8 +48,8 @@ public class PackageController {
 
 	@GetMapping
 	public ResponseEntity<ApiResponse<PageResponse<PackageResponse>>> getPackages(
-			@RequestParam(defaultValue = defaultPage) final int page,
-			@RequestParam(defaultValue = defaultSize) final int size
+			@RequestParam(defaultValue = DEFAULT_PAGE) final int page,
+			@RequestParam(defaultValue = DEFAULT_SIZE) final int size
 	) {
 		final Page<PackageResponse> response = packageService.getPackages(page, size);
 

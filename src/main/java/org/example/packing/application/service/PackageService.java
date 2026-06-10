@@ -1,8 +1,8 @@
 package org.example.packing.application.service;
 
-import jakarta.persistence.EntityNotFoundException;
 import org.example.packing.application.dto.PackageRequest;
 import org.example.packing.application.dto.PackageResponse;
+import org.example.packing.domain.exception.PackageNotFoundException;
 import org.example.packing.infrastructure.persistence.entity.PackageEntity;
 import org.example.packing.infrastructure.persistence.mapper.PackagePersistenceMapper;
 import org.example.packing.infrastructure.persistence.repository.PackageRepository;
@@ -31,8 +31,8 @@ public class PackageService {
 	}
 
 	@Transactional
-	public List<PackageResponse> createPackages(final List<PackageRequest> requests) {
-		final List<PackageEntity> entities = packageMapper.toEntityList(requests);
+	public List<PackageResponse> createPackages(final List<PackageRequest> packages) {
+		final List<PackageEntity> entities = packageMapper.toEntityList(packages);
 		final List<PackageEntity> savedEntities = packageRepository.saveAll(entities);
 
 		return packageMapper.toResponseList(savedEntities);
@@ -43,7 +43,7 @@ public class PackageService {
 		final Pageable pageable = PageRequest.of(
 				page,
 				size,
-				Sort.by("id")
+				Sort.by("id").ascending()
 		);
 
 		return packageRepository.findAll(pageable)
@@ -52,19 +52,17 @@ public class PackageService {
 
 	@Transactional(readOnly = true)
 	public PackageResponse getPackage(final UUID id) {
-		return packageRepository.findById(id.toString())
+		return packageRepository.findById(id)
 				.map(packageMapper::toResponse)
-				.orElseThrow(() -> new EntityNotFoundException("Package not found: " + id));
+				.orElseThrow(() -> new PackageNotFoundException(id));
 	}
 
 	@Transactional
 	public void deletePackage(final UUID id) {
-		final String packageId = id.toString();
-
-		if (!packageRepository.existsById(packageId)) {
-			throw new EntityNotFoundException("Package not found: " + packageId);
+		if (!packageRepository.existsById(id)) {
+			throw new PackageNotFoundException(id);
 		}
 
-		packageRepository.deleteById(packageId);
+		packageRepository.deleteById(id);
 	}
 }
