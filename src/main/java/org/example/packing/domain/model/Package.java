@@ -9,22 +9,19 @@ import java.util.UUID;
  * Identity is established by {@code id}. Two packages with the same dimensions
  * and weight but different ids are different packages.
  */
-public record Package(String id, Dimensions dimensions, Weight weight) {
+public record Package(UUID id, Dimensions dimensions, Weight weight) {
 
-	public Package(final String id, final Dimensions dimensions, final Weight weight) {
+	public Package(final UUID id, final Dimensions dimensions, final Weight weight) {
 		this.id = Objects.requireNonNull(id, "id must not be null");
 		this.dimensions = Objects.requireNonNull(dimensions, "dimensions must not be null");
 		this.weight = Objects.requireNonNull(weight, "weight must not be null");
-		if (id.isBlank()) {
-			throw new IllegalArgumentException("id must not be blank");
-		}
 	}
 
 	/**
 	 * Convenience factory generating a random UUID.
 	 */
 	public static Package of(final Dimensions dimensions, final Weight weight) {
-		return new Package(UUID.randomUUID().toString(), dimensions, weight);
+		return new Package(UUID.randomUUID(), dimensions, weight);
 	}
 
 	public double volume() {

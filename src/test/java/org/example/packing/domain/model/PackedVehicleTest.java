@@ -1,155 +1,349 @@
 package org.example.packing.domain.model;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PackedVehicleTest {
 
-	@Test
-	void shouldCreatePackedVehicleWithEmptyPackagesAndZeroWeight() {
-		final Vehicle vehicle = createVan();
+	private Vehicle vehicle;
+	private PackedVehicle packedVehicle;
 
-		final PackedVehicle packedVehicle = new PackedVehicle(vehicle);
+	private Dimensions cargoArea;
+	private Weight maxPayload;
 
-		assertEquals(vehicle, packedVehicle.vehicle());
-		assertTrue(packedVehicle.placedPackages().isEmpty());
-		assertEquals(Weight.ZERO, packedVehicle.currentWeight());
-	}
+	private Package firstPackage;
+	private Package secondPackage;
 
-	@Test
-	void shouldPlacePackageWhenItFits() {
-		final PackedVehicle packedVehicle = new PackedVehicle(createVan());
+	private Position originPosition;
+	private Position nonOverlappingPosition;
+	private Position overlappingPosition;
+	private Position outsideCargoAreaPosition;
 
-		final Package pkg = new Package(
-				"PKG-001",
-				new Dimensions(90.0, 60.0, 50.0),
+	@BeforeEach
+	void setUp() {
+		cargoArea = new Dimensions(100.0, 100.0, 100.0);
+		maxPayload = new Weight(1000.0);
+
+		vehicle = createVehicle(cargoArea, maxPayload);
+		packedVehicle = new PackedVehicle(vehicle);
+
+		firstPackage = createPackage(
+				new Dimensions(10.0, 10.0, 10.0),
+				new Weight(100.0)
+		);
+
+		secondPackage = createPackage(
+				new Dimensions(10.0, 10.0, 10.0),
 				new Weight(200.0)
 		);
 
-		final Position position = new Position(0.0, 0.0, 0.0);
-
-		assertTrue(packedVehicle.canPlace(pkg, position));
-
-		packedVehicle.place(pkg, position);
-
-		assertEquals(1, packedVehicle.placedPackages().size());
-		assertEquals(new Weight(200.0), packedVehicle.currentWeight());
+		originPosition = new Position(0.0, 0.0, 0.0);
+		nonOverlappingPosition = new Position(10.0, 0.0, 0.0);
+		overlappingPosition = new Position(5.0, 0.0, 0.0);
+		outsideCargoAreaPosition = new Position(95.0, 0.0, 0.0);
 	}
 
 	@Test
-	void shouldNotPlacePackageWhenPayloadWouldBeExceeded() {
-		final Vehicle vehicle = new Vehicle(
-				"SMALL-VAN",
-				"Small Van",
-				new Dimensions(420.0, 180.0, 200.0),
-				new Weight(100.0)
-		);
+	void shouldCreatePackedVehicleWhenVehicleIsNotNull() {
+		// when
+		final PackedVehicle result = new PackedVehicle(vehicle);
 
-		final PackedVehicle packedVehicle = new PackedVehicle(vehicle);
-
-		final Package pkg = new Package(
-				"PKG-001",
-				new Dimensions(90.0, 60.0, 50.0),
-				new Weight(200.0)
-		);
-
-		assertFalse(packedVehicle.canPlace(pkg, new Position(0.0, 0.0, 0.0)));
+		// then
+		assertThat(result.vehicle()).isEqualTo(vehicle);
+		assertThat(result.placedPackages()).isEmpty();
+		assertThat(result.currentWeight()).isEqualTo(Weight.ZERO);
 	}
 
 	@Test
-	void shouldNotPlacePackageWhenItDoesNotFitInsideCargoArea() {
-		final PackedVehicle packedVehicle = new PackedVehicle(createVan());
-
-		final Package tooLongPackage = new Package(
-				"PKG-TOO-LONG",
-				new Dimensions(600.0, 60.0, 50.0),
-				new Weight(200.0)
-		);
-
-		assertFalse(packedVehicle.canPlace(tooLongPackage, new Position(0.0, 0.0, 0.0)));
+	void shouldThrowExceptionWhenVehicleIsNull() {
+		// when & then
+		assertThatThrownBy(() -> new PackedVehicle(null))
+				.isInstanceOf(NullPointerException.class)
+				.hasMessage("vehicle must not be null");
 	}
 
 	@Test
-	void shouldNotPlaceOverlappingPackages() {
-		final PackedVehicle packedVehicle = new PackedVehicle(createVan());
-
-		final Package first = new Package(
-				"PKG-001",
-				new Dimensions(100.0, 100.0, 100.0),
-				new Weight(100.0)
-		);
-
-		final Package second = new Package(
-				"PKG-002",
-				new Dimensions(100.0, 100.0, 100.0),
-				new Weight(100.0)
-		);
-
-		packedVehicle.place(first, new Position(0.0, 0.0, 0.0));
-
-		assertFalse(packedVehicle.canPlace(second, new Position(50.0, 50.0, 50.0)));
+	void shouldReturnUnmodifiablePlacedPackagesList() {
+		// when & then
+		assertThatThrownBy(() -> packedVehicle.placedPackages().add(
+				new PlacedPackage(firstPackage, originPosition)
+		)).isInstanceOf(UnsupportedOperationException.class);
 	}
 
 	@Test
-	void shouldPlacePackagesNextToEachOther() {
-		final PackedVehicle packedVehicle = new PackedVehicle(createVan());
+	void shouldReturnInitialRemainingPayloadEqualToVehicleMaxPayload() {
+		// when
+		final Weight result = packedVehicle.remainingPayload();
 
-		final Package first = new Package(
-				"PKG-001",
-				new Dimensions(100.0, 100.0, 100.0),
-				new Weight(100.0)
-		);
-
-		final Package second = new Package(
-				"PKG-002",
-				new Dimensions(100.0, 100.0, 100.0),
-				new Weight(100.0)
-		);
-
-		packedVehicle.place(first, new Position(0.0, 0.0, 0.0));
-
-		assertTrue(packedVehicle.canPlace(second, new Position(100.0, 0.0, 0.0)));
+		// then
+		assertThat(result).isEqualTo(maxPayload);
 	}
 
 	@Test
-	void shouldCalculateRemainingPayload() {
-		final PackedVehicle packedVehicle = new PackedVehicle(createVan());
+	void shouldReturnZeroCurrentVolumeWhenNoPackagesArePlaced() {
+		// when
+		final double result = packedVehicle.currentVolume();
 
-		final Package pkg = new Package(
-				"PKG-001",
-				new Dimensions(90.0, 60.0, 50.0),
-				new Weight(200.0)
-		);
-
-		packedVehicle.place(pkg, new Position(0.0, 0.0, 0.0));
-
-		assertEquals(new Weight(800.0), packedVehicle.remainingPayload());
+		// then
+		assertThat(result).isEqualTo(0.0);
 	}
 
 	@Test
-	void shouldCalculateCurrentVolume() {
-		final PackedVehicle packedVehicle = new PackedVehicle(createVan());
+	void shouldReturnZeroVolumeUtilizationWhenNoPackagesArePlaced() {
+		// when
+		final double result = packedVehicle.volumeUtilization();
 
-		final Package pkg = new Package(
-				"PKG-001",
-				new Dimensions(10.0, 20.0, 30.0),
-				new Weight(100.0)
-		);
-
-		packedVehicle.place(pkg, new Position(0.0, 0.0, 0.0));
-
-		assertEquals(6000.0, packedVehicle.currentVolume());
+		// then
+		assertThat(result).isEqualTo(0.0);
 	}
 
-	private Vehicle createVan() {
+	@Test
+	void shouldReturnZeroWeightUtilizationWhenNoPackagesArePlaced() {
+		// when
+		final double result = packedVehicle.weightUtilization();
+
+		// then
+		assertThat(result).isEqualTo(0.0);
+	}
+
+	@Test
+	void shouldReturnTrueWhenPackageCanBePlaced() {
+		// when
+		final boolean result = packedVehicle.canPlace(firstPackage, originPosition);
+
+		// then
+		assertThat(result).isTrue();
+	}
+
+	@Test
+	void shouldThrowExceptionWhenCheckingPlacementForNullPackage() {
+		// when & then
+		assertThatThrownBy(() -> packedVehicle.canPlace(null, originPosition))
+				.isInstanceOf(NullPointerException.class)
+				.hasMessage("pkg must not be null");
+	}
+
+	@Test
+	void shouldThrowExceptionWhenCheckingPlacementForNullPosition() {
+		// when & then
+		assertThatThrownBy(() -> packedVehicle.canPlace(firstPackage, null))
+				.isInstanceOf(NullPointerException.class)
+				.hasMessage("position must not be null");
+	}
+
+	@Test
+	void shouldReturnFalseWhenPackageWouldExceedMaxPayload() {
+		// given
+		final Package tooHeavyPackage = createPackage(
+				new Dimensions(10.0, 10.0, 10.0),
+				new Weight(1001.0)
+		);
+
+		// when
+		final boolean result = packedVehicle.canPlace(tooHeavyPackage, originPosition);
+
+		// then
+		assertThat(result).isFalse();
+	}
+
+	@Test
+	void shouldReturnFalseWhenPackageWouldBeOutsideCargoArea() {
+		// when
+		final boolean result = packedVehicle.canPlace(firstPackage, outsideCargoAreaPosition);
+
+		// then
+		assertThat(result).isFalse();
+	}
+
+	@Test
+	void shouldReturnFalseWhenPackageWouldOverlapWithAlreadyPlacedPackage() {
+		// given
+		packedVehicle.place(firstPackage, originPosition);
+
+		// when
+		final boolean result = packedVehicle.canPlace(secondPackage, overlappingPosition);
+
+		// then
+		assertThat(result).isFalse();
+	}
+
+	@Test
+	void shouldReturnTrueWhenPackageDoesNotOverlapWithAlreadyPlacedPackage() {
+		// given
+		packedVehicle.place(firstPackage, originPosition);
+
+		// when
+		final boolean result = packedVehicle.canPlace(secondPackage, nonOverlappingPosition);
+
+		// then
+		assertThat(result).isTrue();
+	}
+
+	@Test
+	void shouldNotMutateStateWhenCanPlaceIsCalled() {
+		// when
+		final boolean result = packedVehicle.canPlace(firstPackage, originPosition);
+
+		// then
+		assertThat(result).isTrue();
+		assertThat(packedVehicle.placedPackages()).isEmpty();
+		assertThat(packedVehicle.currentWeight()).isEqualTo(Weight.ZERO);
+	}
+
+	@Test
+	void shouldPlacePackageWhenPlacementIsValid() {
+		// when
+		packedVehicle.place(firstPackage, originPosition);
+
+		// then
+		assertThat(packedVehicle.placedPackages()).hasSize(1);
+		assertThat(packedVehicle.placedPackages().getFirst().pkg()).isEqualTo(firstPackage);
+		assertThat(packedVehicle.placedPackages().getFirst().position()).isEqualTo(originPosition);
+		assertThat(packedVehicle.currentWeight()).isEqualTo(new Weight(100.0));
+	}
+
+	@Test
+	void shouldUpdateCurrentWeightAfterPlacingMultiplePackages() {
+		// when
+		packedVehicle.place(firstPackage, originPosition);
+		packedVehicle.place(secondPackage, nonOverlappingPosition);
+
+		// then
+		assertThat(packedVehicle.currentWeight()).isEqualTo(new Weight(300.0));
+	}
+
+	@Test
+	void shouldUpdateRemainingPayloadAfterPlacingPackage() {
+		// given
+		packedVehicle.place(firstPackage, originPosition);
+
+		// when
+		final Weight result = packedVehicle.remainingPayload();
+
+		// then
+		assertThat(result).isEqualTo(new Weight(900.0));
+	}
+
+	@Test
+	void shouldUpdateCurrentVolumeAfterPlacingPackage() {
+		// given
+		packedVehicle.place(firstPackage, originPosition);
+
+		// when
+		final double result = packedVehicle.currentVolume();
+
+		// then
+		assertThat(result).isEqualTo(1000.0);
+	}
+
+	@Test
+	void shouldCalculateVolumeUtilization() {
+		// given
+		packedVehicle.place(firstPackage, originPosition);
+
+		// when
+		final double result = packedVehicle.volumeUtilization();
+
+		// then
+		assertThat(result).isEqualTo(0.001);
+	}
+
+	@Test
+	void shouldCalculateWeightUtilization() {
+		// given
+		packedVehicle.place(firstPackage, originPosition);
+
+		// when
+		final double result = packedVehicle.weightUtilization();
+
+		// then
+		assertThat(result).isEqualTo(0.1);
+	}
+
+	@Test
+	void shouldThrowExceptionWhenTryingToPlaceInvalidPackage() {
+		// given
+		final Package tooHeavyPackage = createPackage(
+				new Dimensions(10.0, 10.0, 10.0),
+				new Weight(1001.0)
+		);
+
+		// when & then
+		assertThatThrownBy(() -> packedVehicle.place(tooHeavyPackage, originPosition))
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("Cannot place package")
+				.hasMessageContaining("would violate constraints");
+	}
+
+	@Test
+	void shouldNotMutateStateWhenPlacingInvalidPackage() {
+		// given
+		final Package tooHeavyPackage = createPackage(
+				new Dimensions(10.0, 10.0, 10.0),
+				new Weight(1001.0)
+		);
+
+		// when
+		assertThatThrownBy(() -> packedVehicle.place(tooHeavyPackage, originPosition))
+				.isInstanceOf(IllegalStateException.class);
+
+		// then
+		assertThat(packedVehicle.placedPackages()).isEmpty();
+		assertThat(packedVehicle.currentWeight()).isEqualTo(Weight.ZERO);
+		assertThat(packedVehicle.currentVolume()).isEqualTo(0.0);
+	}
+
+	@Test
+	void shouldReturnSameValuesFromJavaBeanStyleGetters() {
+		// given
+		packedVehicle.place(firstPackage, originPosition);
+
+		// when & then
+		assertThat(packedVehicle.getVehicle()).isEqualTo(packedVehicle.vehicle());
+		assertThat(packedVehicle.getPlacedPackages()).isEqualTo(packedVehicle.placedPackages());
+		assertThat(packedVehicle.getCurrentWeight()).isEqualTo(packedVehicle.currentWeight());
+		assertThat(packedVehicle.getRemainingPayload()).isEqualTo(packedVehicle.remainingPayload());
+		assertThat(packedVehicle.getCurrentVolume()).isEqualTo(packedVehicle.currentVolume());
+		assertThat(packedVehicle.getVolumeUtilization()).isEqualTo(packedVehicle.volumeUtilization());
+		assertThat(packedVehicle.getWeightUtilization()).isEqualTo(packedVehicle.weightUtilization());
+	}
+
+	@Test
+	void shouldReturnFormattedString() {
+		// given
+		packedVehicle.place(firstPackage, originPosition);
+
+		// when
+		final String result = packedVehicle.toString();
+
+		// then
+		assertThat(result)
+				.contains("PackedVehicle[")
+				.contains(vehicle.id().toString())
+				.contains("packed=1")
+				.contains("weight=")
+				.contains("vol=");
+	}
+
+	private Vehicle createVehicle(final Dimensions cargoArea, final Weight maxPayload) {
 		return new Vehicle(
-				"VAN-001",
-				"Mercedes Sprinter",
-				new Dimensions(420.0, 180.0, 200.0),
-				new Weight(1000.0)
+				UUID.randomUUID(),
+				"Test vehicle",
+				cargoArea,
+				maxPayload
+		);
+	}
+
+	private Package createPackage(final Dimensions dimensions, final Weight weight) {
+		return new Package(
+				UUID.randomUUID(),
+				dimensions,
+				weight
 		);
 	}
 }

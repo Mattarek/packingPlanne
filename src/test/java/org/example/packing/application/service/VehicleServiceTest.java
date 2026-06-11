@@ -2,22 +2,39 @@ package org.example.packing.application.service;
 
 import org.example.packing.application.dto.VehicleRequest;
 import org.example.packing.application.dto.VehicleResponse;
+import org.example.packing.domain.exception.VehicleNotFoundException;
 import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
 import org.example.packing.infrastructure.persistence.mapper.VehiclePersistenceMapper;
 import org.example.packing.infrastructure.persistence.repository.VehicleRepository;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,170 +49,165 @@ class VehicleServiceTest {
 	@InjectMocks
 	private VehicleService vehicleService;
 
-	@Test
-	void shouldCreateVehicle() {
-		final VehicleRequest request = new VehicleRequest(
-				"VAN-001",
-				"Mercedes Sprinter",
-				420.0,
-				180.0,
-				200.0,
-				1000.0
-		);
+	private UUID vehicleId;
 
-		final VehiclesEntity entity = new VehiclesEntity(
-				"VAN-001",
-				"Mercedes Sprinter",
-				420.0,
-				180.0,
-				200.0,
-				1000.0
-		);
+	private VehicleRequest vehicleRequest;
+	private VehicleResponse vehicleResponse;
+	private VehiclesEntity vehicleEntity;
 
-		when(vehicleMapper.toEntity(request)).thenReturn(entity);
+	private List<VehicleRequest> vehicleRequests;
+	private List<VehiclesEntity> vehicleEntities;
+	private List<VehicleResponse> vehicleResponses;
 
-		vehicleService.createVehicle(request);
+	@BeforeEach
+	void setUp() {
+		vehicleId = UUID.randomUUID();
 
-		verify(vehicleMapper).toEntity(request);
-		verify(vehicleRepository).save(entity);
+		vehicleRequest = mock(VehicleRequest.class);
+		vehicleResponse = mock(VehicleResponse.class);
+		vehicleEntity = mock(VehiclesEntity.class);
+
+		vehicleRequests = List.of(vehicleRequest);
+		vehicleEntities = List.of(vehicleEntity);
+		vehicleResponses = List.of(vehicleResponse);
 	}
 
 	@Test
 	void shouldCreateVehicles() {
-		final VehicleRequest first = new VehicleRequest(
-				"VAN-001",
-				"Mercedes Sprinter",
-				420.0,
-				180.0,
-				200.0,
-				1000.0
-		);
+		// given
+		when(vehicleMapper.toEntityList(vehicleRequests))
+				.thenReturn(vehicleEntities);
 
-		final VehicleRequest second = new VehicleRequest(
-				"TRUCK-001",
-				"Iveco Daily 7t",
-				620.0,
-				220.0,
-				230.0,
-				3500.0
-		);
+		when(vehicleRepository.saveAll(vehicleEntities))
+				.thenReturn(vehicleEntities);
 
-		final VehiclesEntity firstEntity = new VehiclesEntity(
-				"VAN-001",
-				"Mercedes Sprinter",
-				420.0,
-				180.0,
-				200.0,
-				1000.0
-		);
+		when(vehicleMapper.toResponseList(vehicleEntities))
+				.thenReturn(vehicleResponses);
 
-		final VehiclesEntity secondEntity = new VehiclesEntity(
-				"TRUCK-001",
-				"Iveco Daily 7t",
-				620.0,
-				220.0,
-				230.0,
-				3500.0
-		);
+		// when
+		final List<VehicleResponse> result = vehicleService.createVehicles(vehicleRequests);
 
-		when(vehicleMapper.toEntityList(List.of(first, second)))
-				.thenReturn(List.of(firstEntity, secondEntity));
+		// then
+		assertThat(result).isEqualTo(vehicleResponses);
 
-		vehicleService.createVehicles(List.of(first, second));
+		verify(vehicleMapper).toEntityList(vehicleRequests);
+		verify(vehicleRepository).saveAll(vehicleEntities);
+		verify(vehicleMapper).toResponseList(vehicleEntities);
 
-		verify(vehicleRepository).saveAll(List.of(firstEntity, secondEntity));
+		verifyNoMoreInteractions(vehicleMapper, vehicleRepository);
 	}
 
 	@Test
-	void shouldGetVehicles() {
-		final VehiclesEntity entity = new VehiclesEntity(
-				"VAN-001",
-				"Mercedes Sprinter",
-				420.0,
-				180.0,
-				200.0,
-				1000.0
+	void shouldReturnPagedVehiclesSortedByIdAscending() {
+		// given
+		final int page = 0;
+		final int size = 10;
+
+		final Page<VehiclesEntity> entityPage = new PageImpl<>(
+				vehicleEntities,
+				PageRequest.of(page, size, Sort.by("id").ascending()),
+				vehicleEntities.size()
 		);
 
-		final VehicleResponse response = new VehicleResponse(
-				"VAN-001",
-				"Mercedes Sprinter",
-				420.0,
-				180.0,
-				200.0,
-				1000.0
-		);
+		when(vehicleRepository.findAll(any(Pageable.class)))
+				.thenReturn(entityPage);
 
-		when(vehicleRepository.findAll()).thenReturn(List.of(entity));
-		when(vehicleMapper.toResponseList(List.of(entity))).thenReturn(List.of(response));
+		when(vehicleMapper.toResponse(vehicleEntity))
+				.thenReturn(vehicleResponse);
 
-		final List<VehicleResponse> result = vehicleService.getVehicles();
+		final ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
 
-		assertEquals(1, result.size());
-		assertEquals("VAN-001", result.get(0).id());
-		assertEquals(420.0, result.get(0).length());
-		assertEquals(1000.0, result.get(0).maxPayload());
+		// when
+		final Page<VehicleResponse> result = vehicleService.getVehicles(page, size);
+
+		// then
+		assertThat(result.getContent()).containsExactly(vehicleResponse);
+		assertThat(result.getNumber()).isEqualTo(page);
+		assertThat(result.getSize()).isEqualTo(size);
+		assertThat(result.getTotalElements()).isEqualTo(1);
+
+		verify(vehicleRepository).findAll(pageableCaptor.capture());
+
+		final Pageable capturedPageable = pageableCaptor.getValue();
+
+		assertThat(capturedPageable.getPageNumber()).isEqualTo(page);
+		assertThat(capturedPageable.getPageSize()).isEqualTo(size);
+		assertThat(capturedPageable.getSort())
+				.isEqualTo(Sort.by("id").ascending());
+
+		verify(vehicleMapper).toResponse(vehicleEntity);
+
+		verifyNoMoreInteractions(vehicleRepository, vehicleMapper);
 	}
 
 	@Test
-	void shouldGetVehicleById() {
-		final VehiclesEntity entity = new VehiclesEntity(
-				"VAN-001",
-				"Mercedes Sprinter",
-				420.0,
-				180.0,
-				200.0,
-				1000.0
-		);
+	void shouldReturnVehicleById() {
+		// given
+		when(vehicleRepository.findById(vehicleId))
+				.thenReturn(Optional.of(vehicleEntity));
 
-		final VehicleResponse response = new VehicleResponse(
-				"VAN-001",
-				"Mercedes Sprinter",
-				420.0,
-				180.0,
-				200.0,
-				1000.0
-		);
+		when(vehicleMapper.toResponse(vehicleEntity))
+				.thenReturn(vehicleResponse);
 
-		when(vehicleRepository.findById("VAN-001")).thenReturn(Optional.of(entity));
-		when(vehicleMapper.toResponse(entity)).thenReturn(response);
+		// when
+		final VehicleResponse result = vehicleService.getVehicle(vehicleId);
 
-		final VehicleResponse result = vehicleService.getVehicle("VAN-001");
+		// then
+		assertThat(result).isEqualTo(vehicleResponse);
 
-		assertEquals("VAN-001", result.id());
-		assertEquals("Mercedes Sprinter", result.name());
-		assertEquals(420.0, result.length());
+		verify(vehicleRepository).findById(vehicleId);
+		verify(vehicleMapper).toResponse(vehicleEntity);
+
+		verifyNoMoreInteractions(vehicleRepository, vehicleMapper);
 	}
 
 	@Test
-	void shouldThrowWhenVehicleDoesNotExist() {
-		when(vehicleRepository.findById("UNKNOWN")).thenReturn(Optional.empty());
+	void shouldThrowExceptionWhenVehicleDoesNotExistWhileGettingVehicle() {
+		// given
+		when(vehicleRepository.findById(vehicleId))
+				.thenReturn(Optional.empty());
 
-		assertThrows(IllegalArgumentException.class, () -> vehicleService.getVehicle("UNKNOWN"));
+		// when & then
+		assertThatThrownBy(() -> vehicleService.getVehicle(vehicleId))
+				.isInstanceOf(VehicleNotFoundException.class);
+
+		verify(vehicleRepository).findById(vehicleId);
+
+		verifyNoInteractions(vehicleMapper);
+		verifyNoMoreInteractions(vehicleRepository);
 	}
 
 	@Test
-	void shouldDeleteVehicle() {
-		when(vehicleRepository.existsById("VAN-001")).thenReturn(true);
+	void shouldDeleteVehicleById() {
+		// given
+		when(vehicleRepository.existsById(vehicleId))
+				.thenReturn(true);
 
-		vehicleService.deleteVehicle("VAN-001");
+		// when
+		vehicleService.deleteVehicle(vehicleId);
 
-		verify(vehicleRepository).deleteById("VAN-001");
+		// then
+		verify(vehicleRepository).existsById(vehicleId);
+		verify(vehicleRepository).deleteById(vehicleId);
+
+		verifyNoInteractions(vehicleMapper);
+		verifyNoMoreInteractions(vehicleRepository);
 	}
 
 	@Test
-	void shouldThrowWhenDeletingMissingVehicle() {
-		when(vehicleRepository.existsById("UNKNOWN")).thenReturn(false);
+	void shouldThrowExceptionWhenVehicleDoesNotExistWhileDeletingVehicle() {
+		// given
+		when(vehicleRepository.existsById(vehicleId))
+				.thenReturn(false);
 
-		assertThrows(IllegalArgumentException.class, () -> vehicleService.deleteVehicle("UNKNOWN"));
+		// when & then
+		assertThatThrownBy(() -> vehicleService.deleteVehicle(vehicleId))
+				.isInstanceOf(VehicleNotFoundException.class);
 
-		verify(vehicleRepository, never()).deleteById("UNKNOWN");
-	}
+		verify(vehicleRepository).existsById(vehicleId);
+		verify(vehicleRepository, never()).deleteById(any());
 
-	@Test
-	void shouldDeleteAllVehicles() {
-		vehicleService.deleteAllVehicles();
-
-		verify(vehicleRepository).deleteAll();
+		verifyNoInteractions(vehicleMapper);
+		verifyNoMoreInteractions(vehicleRepository);
 	}
 }

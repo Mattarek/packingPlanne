@@ -2,22 +2,35 @@ package org.example.packing.application.service;
 
 import org.example.packing.application.dto.PackageRequest;
 import org.example.packing.application.dto.PackageResponse;
+import org.example.packing.domain.exception.PackageNotFoundException;
 import org.example.packing.infrastructure.persistence.entity.PackageEntity;
 import org.example.packing.infrastructure.persistence.mapper.PackagePersistenceMapper;
 import org.example.packing.infrastructure.persistence.repository.PackageRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,93 +45,165 @@ class PackageServiceTest {
 	@InjectMocks
 	private PackageService packageService;
 
-	@Test
-	void shouldCreatePackage() {
-		final PackageRequest request = new PackageRequest("PKG-001", 90.0, 60.0, 50.0, 200.0);
-		final PackageEntity entity = new PackageEntity("PKG-001", 90.0, 60.0, 50.0, 200.0);
+	private UUID packageId;
 
-		when(packageMapper.toEntity(request)).thenReturn(entity);
+	private PackageRequest packageRequest;
+	private PackageResponse packageResponse;
+	private PackageEntity packageEntity;
 
-		packageService.createPackage(request);
+	private List<PackageRequest> packageRequests;
+	private List<PackageEntity> packageEntities;
+	private List<PackageResponse> packageResponses;
 
-		verify(packageMapper).toEntity(request);
-		verify(packageRepository).save(entity);
+	@BeforeEach
+	void setUp() {
+		packageId = UUID.randomUUID();
+
+		packageRequest = mock(PackageRequest.class);
+		packageResponse = mock(PackageResponse.class);
+		packageEntity = mock(PackageEntity.class);
+
+		packageRequests = List.of(packageRequest);
+		packageEntities = List.of(packageEntity);
+		packageResponses = List.of(packageResponse);
 	}
 
 	@Test
 	void shouldCreatePackages() {
-		final PackageRequest first = new PackageRequest("PKG-001", 90.0, 60.0, 50.0, 200.0);
-		final PackageRequest second = new PackageRequest("PKG-002", 40.0, 20.0, 10.0, 10.0);
+		// given
+		when(packageMapper.toEntityList(packageRequests))
+				.thenReturn(packageEntities);
 
-		final PackageEntity firstEntity = new PackageEntity("PKG-001", 90.0, 60.0, 50.0, 200.0);
-		final PackageEntity secondEntity = new PackageEntity("PKG-002", 40.0, 20.0, 10.0, 10.0);
+		when(packageRepository.saveAll(packageEntities))
+				.thenReturn(packageEntities);
 
-		when(packageMapper.toEntity(first)).thenReturn(firstEntity);
-		when(packageMapper.toEntity(second)).thenReturn(secondEntity);
+		when(packageMapper.toResponseList(packageEntities))
+				.thenReturn(packageResponses);
 
-		packageService.createPackages(List.of(first, second));
+		// when
+		final List<PackageResponse> result = packageService.createPackages(packageRequests);
 
-		verify(packageRepository).saveAll(List.of(firstEntity, secondEntity));
+		// then
+		assertThat(result).isEqualTo(packageResponses);
+
+		verify(packageMapper).toEntityList(packageRequests);
+		verify(packageRepository).saveAll(packageEntities);
+		verify(packageMapper).toResponseList(packageEntities);
+
+		verifyNoMoreInteractions(packageMapper, packageRepository);
 	}
 
 	@Test
-	void shouldGetPackages() {
-		final PackageEntity entity = new PackageEntity("PKG-001", 90.0, 60.0, 50.0, 200.0);
-		final PackageResponse response = new PackageResponse("PKG-001", 90.0, 60.0, 50.0, 200.0);
+	void shouldReturnPagedPackagesSortedByIdAscending() {
+		// given
+		final int page = 0;
+		final int size = 10;
 
-		when(packageRepository.findAll()).thenReturn(List.of(entity));
-		when(packageMapper.toResponseList(List.of(entity))).thenReturn(List.of(response));
+		final Page<PackageEntity> entityPage = new PageImpl<>(
+				packageEntities,
+				PageRequest.of(page, size, Sort.by("id").ascending()),
+				packageEntities.size()
+		);
 
-		final List<PackageResponse> result = packageService.getPackages();
+		when(packageRepository.findAll(any(Pageable.class)))
+				.thenReturn(entityPage);
 
-		assertEquals(1, result.size());
-		assertEquals("PKG-001", result.get(0).id());
-		assertEquals(90.0, result.get(0).length());
-		assertEquals(200.0, result.get(0).weight());
+		when(packageMapper.toResponse(packageEntity))
+				.thenReturn(packageResponse);
+
+		final ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+
+		// when
+		final Page<PackageResponse> result = packageService.getPackages(page, size);
+
+		// then
+		assertThat(result.getContent()).containsExactly(packageResponse);
+		assertThat(result.getNumber()).isEqualTo(page);
+		assertThat(result.getSize()).isEqualTo(size);
+		assertThat(result.getTotalElements()).isEqualTo(1);
+
+		verify(packageRepository).findAll(pageableCaptor.capture());
+
+		final Pageable capturedPageable = pageableCaptor.getValue();
+
+		assertThat(capturedPageable.getPageNumber()).isEqualTo(page);
+		assertThat(capturedPageable.getPageSize()).isEqualTo(size);
+		assertThat(capturedPageable.getSort())
+				.isEqualTo(Sort.by("id").ascending());
+
+		verify(packageMapper).toResponse(packageEntity);
+
+		verifyNoMoreInteractions(packageRepository, packageMapper);
 	}
 
 	@Test
-	void shouldGetPackageById() {
-		final PackageEntity entity = new PackageEntity("PKG-001", 90.0, 60.0, 50.0, 200.0);
-		final PackageResponse response = new PackageResponse("PKG-001", 90.0, 60.0, 50.0, 200.0);
+	void shouldReturnPackageById() {
+		// given
+		when(packageRepository.findById(packageId))
+				.thenReturn(Optional.of(packageEntity));
 
-		when(packageRepository.findById("PKG-001")).thenReturn(Optional.of(entity));
-		when(packageMapper.toResponse(entity)).thenReturn(response);
+		when(packageMapper.toResponse(packageEntity))
+				.thenReturn(packageResponse);
 
-		final PackageResponse result = packageService.getPackage("PKG-001");
+		// when
+		final PackageResponse result = packageService.getPackage(packageId);
 
-		assertEquals("PKG-001", result.id());
+		// then
+		assertThat(result).isEqualTo(packageResponse);
+
+		verify(packageRepository).findById(packageId);
+		verify(packageMapper).toResponse(packageEntity);
+
+		verifyNoMoreInteractions(packageRepository, packageMapper);
 	}
 
 	@Test
-	void shouldThrowWhenPackageDoesNotExist() {
-		when(packageRepository.findById("UNKNOWN")).thenReturn(Optional.empty());
+	void shouldThrowExceptionWhenPackageDoesNotExistWhileGettingPackage() {
+		// given
+		when(packageRepository.findById(packageId))
+				.thenReturn(Optional.empty());
 
-		assertThrows(IllegalArgumentException.class, () -> packageService.getPackage("UNKNOWN"));
+		// when & then
+		assertThatThrownBy(() -> packageService.getPackage(packageId))
+				.isInstanceOf(PackageNotFoundException.class);
+
+		verify(packageRepository).findById(packageId);
+
+		verifyNoInteractions(packageMapper);
+		verifyNoMoreInteractions(packageRepository);
 	}
 
 	@Test
-	void shouldDeletePackage() {
-		when(packageRepository.existsById("PKG-001")).thenReturn(true);
+	void shouldDeletePackageById() {
+		// given
+		when(packageRepository.existsById(packageId))
+				.thenReturn(true);
 
-		packageService.deletePackage("PKG-001");
+		// when
+		packageService.deletePackage(packageId);
 
-		verify(packageRepository).deleteById("PKG-001");
+		// then
+		verify(packageRepository).existsById(packageId);
+		verify(packageRepository).deleteById(packageId);
+
+		verifyNoInteractions(packageMapper);
+		verifyNoMoreInteractions(packageRepository);
 	}
 
 	@Test
-	void shouldThrowWhenDeletingMissingPackage() {
-		when(packageRepository.existsById("UNKNOWN")).thenReturn(false);
+	void shouldThrowExceptionWhenPackageDoesNotExistWhileDeletingPackage() {
+		// given
+		when(packageRepository.existsById(packageId))
+				.thenReturn(false);
 
-		assertThrows(IllegalArgumentException.class, () -> packageService.deletePackage("UNKNOWN"));
+		// when & then
+		assertThatThrownBy(() -> packageService.deletePackage(packageId))
+				.isInstanceOf(PackageNotFoundException.class);
 
-		verify(packageRepository, never()).deleteById("UNKNOWN");
-	}
+		verify(packageRepository).existsById(packageId);
+		verify(packageRepository, never()).deleteById(any());
 
-	@Test
-	void shouldDeleteAllPackages() {
-		packageService.deleteAllPackages();
-
-		verify(packageRepository).deleteAll();
+		verifyNoInteractions(packageMapper);
+		verifyNoMoreInteractions(packageRepository);
 	}
 }

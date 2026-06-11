@@ -1,96 +1,170 @@
 package org.example.packing.domain.model;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class PackageTest {
 
-	@Test
-	void shouldCreatePackage() {
-		final Dimensions dimensions = new Dimensions(90.0, 60.0, 50.0);
-		final Weight weight = new Weight(200.0);
+	private UUID packageId;
 
-		final Package pkg = new Package("PKG-001", dimensions, weight);
+	private Dimensions dimensions;
+	private Weight weight;
 
-		assertEquals("PKG-001", pkg.id());
-		assertEquals(dimensions, pkg.dimensions());
-		assertEquals(weight, pkg.weight());
+	private Package pack;
+
+	@BeforeEach
+	void setUp() {
+		packageId = UUID.randomUUID();
+
+		dimensions = new Dimensions(10.0, 20.0, 30.0);
+		weight = mock(Weight.class);
+
+		pack = new Package(packageId, dimensions, weight);
 	}
 
 	@Test
-	void shouldCalculateVolume() {
-		final Package pkg = new Package(
-				"PKG-001",
-				new Dimensions(90.0, 60.0, 50.0),
-				new Weight(200.0)
-		);
+	void shouldCreatePackageWhenAllArgumentsAreValid() {
+		// when
+		final Package result = new Package(packageId, dimensions, weight);
 
-		assertEquals(270000.0, pkg.volume());
+		// then
+		assertThat(result.id()).isEqualTo(packageId);
+		assertThat(result.dimensions()).isEqualTo(dimensions);
+		assertThat(result.weight()).isEqualTo(weight);
 	}
 
 	@Test
-	void shouldRejectNullId() {
-		assertThrows(NullPointerException.class, () ->
-				new Package(null, new Dimensions(90.0, 60.0, 50.0), new Weight(200.0))
-		);
+	void shouldThrowExceptionWhenIdIsNull() {
+		// when & then
+		assertThatThrownBy(() -> new Package(null, dimensions, weight))
+				.isInstanceOf(NullPointerException.class)
+				.hasMessage("id must not be null");
 	}
 
 	@Test
-	void shouldRejectBlankId() {
-		assertThrows(IllegalArgumentException.class, () ->
-				new Package("   ", new Dimensions(90.0, 60.0, 50.0), new Weight(200.0))
-		);
+	void shouldThrowExceptionWhenDimensionsAreNull() {
+		// when & then
+		assertThatThrownBy(() -> new Package(packageId, null, weight))
+				.isInstanceOf(NullPointerException.class)
+				.hasMessage("dimensions must not be null");
 	}
 
 	@Test
-	void shouldRejectNullDimensions() {
-		assertThrows(NullPointerException.class, () ->
-				new Package("PKG-001", null, new Weight(200.0))
-		);
+	void shouldThrowExceptionWhenWeightIsNull() {
+		// when & then
+		assertThatThrownBy(() -> new Package(packageId, dimensions, null))
+				.isInstanceOf(NullPointerException.class)
+				.hasMessage("weight must not be null");
 	}
 
 	@Test
-	void shouldRejectNullWeight() {
-		assertThrows(NullPointerException.class, () ->
-				new Package("PKG-001", new Dimensions(90.0, 60.0, 50.0), null)
-		);
+	void shouldCreatePackageUsingFactoryMethod() {
+		// when
+		final Package result = Package.of(dimensions, weight);
+
+		// then
+		assertThat(result.id()).isNotNull();
+		assertThat(result.dimensions()).isEqualTo(dimensions);
+		assertThat(result.weight()).isEqualTo(weight);
 	}
 
 	@Test
-	void packagesWithSameIdShouldBeEqual() {
-		final Package first = new Package(
-				"PKG-001",
-				new Dimensions(90.0, 60.0, 50.0),
-				new Weight(200.0)
-		);
+	void shouldCreatePackagesWithDifferentIdsUsingFactoryMethod() {
+		// when
+		final Package first = Package.of(dimensions, weight);
+		final Package second = Package.of(dimensions, weight);
 
-		final Package second = new Package(
-				"PKG-001",
-				new Dimensions(10.0, 10.0, 10.0),
-				new Weight(5.0)
-		);
-
-		assertEquals(first, second);
-		assertEquals(first.hashCode(), second.hashCode());
+		// then
+		assertThat(first.id()).isNotNull();
+		assertThat(second.id()).isNotNull();
+		assertThat(first.id()).isNotEqualTo(second.id());
 	}
 
 	@Test
-	void packagesWithDifferentIdsShouldNotBeEqual() {
-		final Package first = new Package(
-				"PKG-001",
-				new Dimensions(90.0, 60.0, 50.0),
-				new Weight(200.0)
-		);
+	void shouldReturnVolumeFromDimensions() {
+		// when
+		final double result = pack.volume();
 
-		final Package second = new Package(
-				"PKG-002",
-				new Dimensions(90.0, 60.0, 50.0),
-				new Weight(200.0)
-		);
+		// then
+		assertThat(result).isEqualTo(6000.0);
+	}
 
-		assertNotEquals(first, second);
+	@Test
+	void shouldBeEqualWhenPackagesHaveSameId() {
+		// given
+		final Dimensions otherDimensions = new Dimensions(1.0, 2.0, 3.0);
+		final Weight otherWeight = mock(Weight.class);
+
+		final Package other = new Package(packageId, otherDimensions, otherWeight);
+
+		// when & then
+		assertThat(pack).isEqualTo(other);
+	}
+
+	@Test
+	void shouldNotBeEqualWhenPackagesHaveDifferentIds() {
+		// given
+		final Package other = new Package(UUID.randomUUID(), dimensions, weight);
+
+		// when & then
+		assertThat(pack).isNotEqualTo(other);
+	}
+
+	@Test
+	void shouldNotBeEqualWhenComparedWithNull() {
+		// when & then
+		assertThat(pack).isNotEqualTo(null);
+	}
+
+	@Test
+	void shouldNotBeEqualWhenComparedWithDifferentType() {
+		// when & then
+		assertThat(pack).isNotEqualTo("package");
+	}
+
+	@Test
+	void shouldHaveSameHashCodeWhenPackagesHaveSameId() {
+		// given
+		final Dimensions otherDimensions = new Dimensions(1.0, 2.0, 3.0);
+		final Weight otherWeight = mock(Weight.class);
+
+		final Package other = new Package(packageId, otherDimensions, otherWeight);
+
+		// when & then
+		assertThat(pack).hasSameHashCodeAs(other);
+	}
+
+	@Test
+	void shouldHaveDifferentHashCodeWhenPackagesHaveDifferentIds() {
+		// given
+		final Package other = new Package(UUID.randomUUID(), dimensions, weight);
+
+		// when & then
+		assertThat(pack.hashCode()).isNotEqualTo(other.hashCode());
+	}
+
+	@Test
+	void shouldReturnFormattedString() {
+		// given
+		when(weight.toString()).thenReturn("5.0 kg");
+
+		// when
+		final String result = pack.toString();
+
+		// then
+		assertThat(result).isEqualTo(
+				"Package[id=%s, %s, %s]".formatted(
+						packageId,
+						dimensions,
+						weight
+				)
+		);
 	}
 }

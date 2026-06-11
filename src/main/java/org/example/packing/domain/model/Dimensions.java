@@ -1,5 +1,6 @@
 package org.example.packing.domain.model;
 
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -58,6 +59,12 @@ public record Dimensions(double length, double width, double height) {
 
 	@Override
 	public String toString() {
-		return "%.1f×%.1f×%.1f cm".formatted(length, width, height);
+		return String.format(
+				Locale.ROOT,
+				"%.1f×%.1f×%.1f cm",
+				length,
+				width,
+				height
+		);
 	}
 }
