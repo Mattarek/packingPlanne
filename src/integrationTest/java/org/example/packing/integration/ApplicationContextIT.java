@@ -4,15 +4,9 @@ import org.example.packing.application.service.PackageService;
 import org.example.packing.application.service.VehicleService;
 import org.example.packing.application.strategy.PackingStrategy;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestConstructor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@ActiveProfiles("integration-test")
-@TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 class ApplicationContextIT extends AbstractPostgresIntegrationTest {
 
 	private final PackageService packageService;

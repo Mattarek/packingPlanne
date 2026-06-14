@@ -3,19 +3,13 @@ package org.example.packing.infrastructure.persistence.repository;
 import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
 import org.example.packing.integration.AbstractPostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestConstructor;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest
-@ActiveProfiles("integration-test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 
 	private final VehicleRepository vehicleRepository;

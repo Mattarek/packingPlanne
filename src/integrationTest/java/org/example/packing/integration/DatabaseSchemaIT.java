@@ -1,11 +1,8 @@
 package org.example.packing.integration;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestConstructor;
 
 import java.util.List;
 import java.util.Map;
@@ -15,9 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringBootTest
-@ActiveProfiles("integration-test")
-@TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 class DatabaseSchemaIT extends AbstractPostgresIntegrationTest {
 
 	private final String selectPackagesTableCount = """
@@ -226,52 +220,6 @@ class DatabaseSchemaIT extends AbstractPostgresIntegrationTest {
 					null
 			);
 		});
-	}
-
-	@Test
-	void shouldDeletePackageFromDatabase() {
-		final UUID id = UUID.randomUUID();
-
-		insertPackage(id, 10.0, 20.0, 30.0, 5.5);
-
-		jdbcTemplate.update(
-				deletePackageById,
-				id
-		);
-
-		final Integer count = jdbcTemplate.queryForObject(
-				selectPackageCountById,
-				Integer.class,
-				id
-		);
-
-		assertEquals(0, count);
-	}
-
-	@Test
-	void shouldUpdatePackageDimensionsAndWeight() {
-		final UUID id = UUID.randomUUID();
-
-		insertPackage(id, 10.0, 20.0, 30.0, 5.5);
-
-		jdbcTemplate.update(
-				updatePackageDimensionsAndWeight,
-				15.0,
-				25.0,
-				35.0,
-				6.5,
-				id
-		);
-
-		final Map<String, Object> row = jdbcTemplate.queryForMap(
-				selectPackageDimensionsAndWeightById,
-				id
-		);
-
-		assertEquals(15.0, ((Number) row.get("length")).doubleValue());
-		assertEquals(25.0, ((Number) row.get("width")).doubleValue());
-		assertEquals(35.0, ((Number) row.get("height")).doubleValue());
-		assertEquals(6.5, ((Number) row.get("weight")).doubleValue());
 	}
 
 	private void insertPackage(

@@ -1,8 +1,14 @@
 package org.example.packing.integration;
 
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestConstructor;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+@SpringBootTest
+@ActiveProfiles("integration-test")
+@TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 public abstract class AbstractPostgresIntegrationTest {
 
 	private static final String POSTGRES_IMAGE = "postgres:16-alpine";
