@@ -25,7 +25,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-liquibase")
 	implementation("org.liquibase:liquibase-core")
 	implementation("org.springframework.kafka:spring-kafka")
-	
+
 	implementation("org.mapstruct:mapstruct:1.5.5.Final")
 	annotationProcessor("org.mapstruct:mapstruct-processor:1.5.5.Final")
 
@@ -38,6 +38,8 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")
 	testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 	testImplementation("org.testcontainers:testcontainers-postgresql")
+	testImplementation("org.testcontainers:testcontainers-kafka:2.0.5")
+	testImplementation("org.awaitility:awaitility:4.3.0")
 
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

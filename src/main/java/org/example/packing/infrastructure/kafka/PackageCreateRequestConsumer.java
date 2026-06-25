@@ -5,6 +5,7 @@ import jakarta.validation.Validator;
 import org.example.packing.application.dto.PackageRequest;
 import org.example.packing.application.dto.PackageResponse;
 import org.example.packing.application.service.PackageService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.type.TypeReference;
@@ -14,6 +15,11 @@ import java.util.List;
 import java.util.Set;
 
 @Component
+@ConditionalOnProperty(
+		name = "app.kafka.enabled",
+		havingValue = "true",
+		matchIfMissing = true
+)
 public class PackageCreateRequestConsumer {
 
 	private final PackageService packageService;
