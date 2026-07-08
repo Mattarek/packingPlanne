@@ -201,7 +201,7 @@ class VehicleControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.success").value(true))
 				.andExpect(jsonPath("$.message").value("Vehicle deleted successfully."))
-				.andExpect(jsonPath("$.data.id").value(vehicleId1.toString()));
+				.andExpect(jsonPath("$.data.deletedId").value(vehicleId1.toString()));
 
 		verify(vehicleService).deleteVehicle(vehicleId1);
 	}

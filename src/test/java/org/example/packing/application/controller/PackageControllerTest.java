@@ -192,7 +192,7 @@ class PackageControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.success").value(true))
 				.andExpect(jsonPath("$.message").value("Package deleted successfully."))
-				.andExpect(jsonPath("$.data.id").value(packageId1.toString()));
+				.andExpect(jsonPath("$.data.deletedId").value(packageId1.toString()));
 
 		verify(packageService).deletePackage(packageId1);
 	}

@@ -2,8 +2,7 @@ package org.example.packing.infrastructure.kafka;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.example.packing.infrastructure.persistence.repository.PackageRepository;
-import org.junit.jupiter.api.BeforeEach;
+import org.example.packing.application.service.PackageService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -36,7 +35,7 @@ class PackageCreateRequestConsumerIntegrationTest {
 	static final KafkaContainer kafka = new KafkaContainer("apache/kafka-native:3.8.0");
 	private static final String TOPIC = "package-create-requests";
 	@Autowired
-	private PackageRepository packageRepository;
+	private PackageService packageService;
 
 	@DynamicPropertySource
 	static void registerProperties(final DynamicPropertyRegistry registry) {
@@ -59,11 +58,6 @@ class PackageCreateRequestConsumerIntegrationTest {
 
 		registry.add("app.kafka.enabled", () -> "true");
 		registry.add("app.kafka.topics.package-create-requests", () -> TOPIC);
-	}
-
-	@BeforeEach
-	void cleanDatabase() {
-		packageRepository.deleteAll();
 	}
 
 	@Test
@@ -94,7 +88,9 @@ class PackageCreateRequestConsumerIntegrationTest {
 
 		// then
 		await()
-				.untilAsserted(() -> assertThat(packageRepository.count()).isEqualTo(2));
+				.untilAsserted(() -> assertThat(
+						packageService.getPackages(0, 20).getTotalElements()
+				).isEqualTo(2));
 	}
 
 	private KafkaTemplate<String, String> kafkaTemplate() {
