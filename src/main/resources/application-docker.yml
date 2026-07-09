@@ -34,8 +34,9 @@ spring:
 
 app:
   kafka:
+    enabled: true
     topics:
       package-create-requests: package-create-requests
-
+      package-create-requests-dlt: package-create-requests.DLT
 server:
   port: 8080
