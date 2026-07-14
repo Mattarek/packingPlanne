@@ -38,11 +38,11 @@ public class PackageCreateRequestConsumer {
 	 * głównego topicu.
 	 *
 	 * attempts=3: pierwsza próba + 2 ponowienia (retry-0, retry-1),
-	 * co 1s, po wyczerpaniu -> package-create-requests.DLT.
+	 * co 5s, po wyczerpaniu -> package-create-requests.DLT.
 	 */
 	@RetryableTopic(
 			attempts = "3",
-			backOff = @BackOff(delay = 1_000L),
+			backOff = @BackOff(delay = 5_000L),
 			exclude = NonRetryableKafkaProcessingException.class,
 			dltTopicSuffix = ".DLT",
 			numPartitions = "${app.kafka.topics.partitions:3}",

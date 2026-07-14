@@ -36,6 +36,7 @@ app:
   kafka:
     enabled: true
     topics:
+      partitions: 3
       package-create-requests: package-create-requests
 server:
   port: 8080
