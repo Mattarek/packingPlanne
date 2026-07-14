@@ -37,8 +37,4 @@ public interface InboxEventRepository
 			@Param("eventType") String eventType,
 			@Param("receivedAt") Instant receivedAt
 	);
-
-	boolean existsByEventId(UUID eventId);
-
-	long countByEventId(UUID eventId);
 }

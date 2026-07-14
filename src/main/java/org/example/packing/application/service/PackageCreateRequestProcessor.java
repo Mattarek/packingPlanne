@@ -2,12 +2,17 @@ package org.example.packing.application.service;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import org.example.packing.application.dto.PackageRequest;
 import org.example.packing.application.dto.PackageResponse;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestEvent;
+import org.example.packing.infrastructure.kafka.event.PackageCreateRequestItem;
 import org.example.packing.infrastructure.kafka.exception.NonRetryableKafkaProcessingException;
+import org.example.packing.infrastructure.kafka.exception.RetryableKafkaProcessingException;
 import org.example.packing.infrastructure.persistence.repository.InboxEventRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.TransientDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,13 +53,27 @@ public class PackageCreateRequestProcessor {
 	) {
 		validateEvent(event);
 
-		final int insertedRows =
-				inboxEventRepository.insertIgnoringDuplicate(
-						UUID.randomUUID(),
-						event.eventId(),
-						event.eventType(),
-						Instant.now()
-				);
+		final int insertedRows;
+		try {
+			insertedRows = inboxEventRepository.insertIgnoringDuplicate(
+					UUID.randomUUID(),
+					event.eventId(),
+					event.eventType(),
+					Instant.now()
+			);
+		} catch (final TransientDataAccessException exception) {
+			throw new RetryableKafkaProcessingException(
+					"Transient database error while recording inbox event: eventId="
+							+ event.eventId(),
+					exception
+			);
+		} catch (final DataIntegrityViolationException exception) {
+			throw new NonRetryableKafkaProcessingException(
+					"Data integrity violation while recording inbox event: eventId="
+							+ event.eventId(),
+					exception
+			);
+		}
 
 		if (insertedRows == 0) {
 			log.info(
@@ -65,16 +84,43 @@ public class PackageCreateRequestProcessor {
 			return;
 		}
 
-		final List<PackageResponse> responses =
-				packageService.createPackages(
-						event.packages()
-				);
+		final List<PackageResponse> responses;
+		try {
+			responses = packageService.createPackages(
+					toPackageRequests(event.packages())
+			);
+		} catch (final TransientDataAccessException exception) {
+			throw new RetryableKafkaProcessingException(
+					"Transient database error while creating packages: eventId="
+							+ event.eventId(),
+					exception
+			);
+		} catch (final DataIntegrityViolationException exception) {
+			throw new NonRetryableKafkaProcessingException(
+					"Data integrity violation while creating packages: eventId="
+							+ event.eventId(),
+					exception
+			);
+		}
 
 		log.info(
 				"Package create event processed: eventId={}, createdPackages={}",
 				event.eventId(),
 				responses.size()
 		);
+	}
+
+	private List<PackageRequest> toPackageRequests(
+			final List<PackageCreateRequestItem> items
+	) {
+		return items.stream()
+				.map(item -> new PackageRequest(
+						item.length(),
+						item.width(),
+						item.height(),
+						item.weight()
+				))
+				.toList();
 	}
 
 	private void validateEvent(

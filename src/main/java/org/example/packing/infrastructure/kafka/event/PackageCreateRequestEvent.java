@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import org.example.packing.application.dto.PackageRequest;
 
 import java.time.Instant;
 import java.util.List;
@@ -22,6 +21,6 @@ public record PackageCreateRequestEvent(
 
 		@NotEmpty
 		@Valid
-		List<PackageRequest> packages
+		List<PackageCreateRequestItem> packages
 ) {
 }

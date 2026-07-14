@@ -19,24 +19,14 @@ public class KafkaTopicConfiguration {
 	public NewTopic packageCreateRequestsTopic(
 			@Value(
 					"${app.kafka.topics.package-create-requests}"
-			) final String topicName
-	) {
-		return TopicBuilder
-				.name(topicName)
-				.partitions(1)
-				.replicas(1)
-				.build();
-	}
-
-	@Bean
-	public NewTopic packageCreateRequestsDltTopic(
+			) final String topicName,
 			@Value(
-					"${app.kafka.topics.package-create-requests-dlt}"
-			) final String topicName
+					"${app.kafka.topics.partitions:3}"
+			) final int partitions
 	) {
 		return TopicBuilder
 				.name(topicName)
-				.partitions(1)
+				.partitions(partitions)
 				.replicas(1)
 				.build();
 	}
