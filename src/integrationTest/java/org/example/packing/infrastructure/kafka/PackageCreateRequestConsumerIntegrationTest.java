@@ -392,14 +392,6 @@ class PackageCreateRequestConsumerIntegrationTest {
 		}
 	}
 
-	/**
-	 * Collects records from {@code topic} matching {@code valueFilter}, ignoring
-	 * anything else already sitting there. The DLT and retry topics are shared
-	 * across every test method in this class (one static Kafka container), so
-	 * without this filter a test could pass merely because an *earlier* test
-	 * already deposited an unrelated record on the same topic — it would prove
-	 * "the topic is non-empty", not "this test's message actually got there".
-	 */
 	private List<ConsumerRecord<String, String>> collectRecords(
 			final String topic,
 			final int minCount,
