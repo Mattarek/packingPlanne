@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -67,7 +68,6 @@ class PackageCreateRequestConsumerIntegrationTest {
 		registry.add("spring.datasource.password", postgres::getPassword);
 
 		registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
-		registry.add("spring.kafka.consumer.group-id", () -> "packing-group-test");
 	}
 
 	@AfterEach
@@ -114,6 +114,7 @@ class PackageCreateRequestConsumerIntegrationTest {
 		// given
 		final long before = totalPackages();
 		final AtomicInteger invocationCount = new AtomicInteger();
+		final UUID eventId = UUID.randomUUID();
 
 		doAnswer(invocation -> {
 			if (invocationCount.getAndIncrement() == 0) {
@@ -126,12 +127,17 @@ class PackageCreateRequestConsumerIntegrationTest {
 		}).when(packageService).createPackages(any());
 
 		// when
-		send(validMessage(UUID.randomUUID()));
+		send(validMessage(eventId));
 
 		// then
 		final String retryTopic = discoverRetryTopicName();
 		final List<ConsumerRecord<String, String>> retryRecords =
-				collectRecords(retryTopic, 1, Duration.ofSeconds(30));
+				collectRecords(
+						retryTopic,
+						1,
+						Duration.ofSeconds(30),
+						value -> value.contains(eventId.toString())
+				);
 		assertThat(retryRecords).isNotEmpty();
 
 		await().untilAsserted(() ->
@@ -146,6 +152,7 @@ class PackageCreateRequestConsumerIntegrationTest {
 	void shouldRejectNonRetryableEventDirectlyToDlt() {
 		// given
 		final long before = totalPackages();
+		final UUID eventId = UUID.randomUUID();
 		final String message = """
 				{
 				  "eventId": "%s",
@@ -161,14 +168,119 @@ class PackageCreateRequestConsumerIntegrationTest {
 				    }
 				  ]
 				}
-				""".formatted(UUID.randomUUID(), Instant.now());
+				""".formatted(eventId, Instant.now());
 
 		// when
 		send(message);
 
 		// then
 		final List<ConsumerRecord<String, String>> dltRecords =
-				collectRecords(DLT_TOPIC, 1, Duration.ofSeconds(10));
+				collectRecords(
+						DLT_TOPIC,
+						1,
+						Duration.ofSeconds(10),
+						value -> value.contains(eventId.toString())
+				);
+
+		assertThat(dltRecords).isNotEmpty();
+		assertThat(totalPackages()).isEqualTo(before);
+	}
+
+	@Test
+	void shouldSendMalformedJsonDirectlyToDlt() {
+		// given
+		final long before = totalPackages();
+		final String malformedJson = "{ this is not valid JSON ";
+
+		// when
+		send(malformedJson);
+
+		// then
+		final List<ConsumerRecord<String, String>> dltRecords =
+				collectRecords(
+						DLT_TOPIC,
+						1,
+						Duration.ofSeconds(10),
+						malformedJson::equals
+				);
+
+		assertThat(dltRecords).isNotEmpty();
+		assertThat(totalPackages()).isEqualTo(before);
+		verify(packageService, Mockito.timeout(5_000).times(0))
+				.createPackages(any());
+	}
+
+	@Test
+	void shouldRejectUnsupportedEventVersionDirectlyToDlt() {
+		// given
+		final long before = totalPackages();
+		final UUID eventId = UUID.randomUUID();
+		final String message = """
+				{
+				  "eventId": "%s",
+				  "eventType": "PACKAGE_CREATE_REQUESTED",
+				  "version": 2,
+				  "occurredAt": "%s",
+				  "packages": [
+				    {
+				      "length": 10.0,
+				      "width": 20.0,
+				      "height": 30.0,
+				      "weight": 5.5
+				    }
+				  ]
+				}
+				""".formatted(eventId, Instant.now());
+
+		// when
+		send(message);
+
+		// then
+		final List<ConsumerRecord<String, String>> dltRecords =
+				collectRecords(
+						DLT_TOPIC,
+						1,
+						Duration.ofSeconds(10),
+						value -> value.contains(eventId.toString())
+				);
+
+		assertThat(dltRecords).isNotEmpty();
+		assertThat(totalPackages()).isEqualTo(before);
+	}
+
+	@Test
+	void shouldRejectEventFailingBeanValidationDirectlyToDlt() {
+		// given
+		final long before = totalPackages();
+		final UUID eventId = UUID.randomUUID();
+		final String message = """
+				{
+				  "eventId": "%s",
+				  "eventType": "PACKAGE_CREATE_REQUESTED",
+				  "version": 1,
+				  "occurredAt": "%s",
+				  "packages": [
+				    {
+				      "length": -10.0,
+				      "width": 20.0,
+				      "height": 30.0,
+				      "weight": 5.5
+				    }
+				  ]
+				}
+				""".formatted(eventId, Instant.now());
+
+		// when
+		send(message);
+
+		// then
+		final List<ConsumerRecord<String, String>> dltRecords =
+				collectRecords(
+						DLT_TOPIC,
+						1,
+						Duration.ofSeconds(10),
+						value -> value.contains(eventId.toString())
+				);
 
 		assertThat(dltRecords).isNotEmpty();
 		assertThat(totalPackages()).isEqualTo(before);
@@ -178,17 +290,23 @@ class PackageCreateRequestConsumerIntegrationTest {
 	void shouldSendToDltAfterExhaustingRetries() {
 		// given
 		final long before = totalPackages();
+		final UUID eventId = UUID.randomUUID();
 
 		doThrow(new TransientDataAccessResourceException(
 				"Simulated persistent transient database failure"
 		)).when(packageService).createPackages(any());
 
 		// when
-		send(validMessage(UUID.randomUUID()));
+		send(validMessage(eventId));
 
 		// then
 		final List<ConsumerRecord<String, String>> dltRecords =
-				collectRecords(DLT_TOPIC, 1, Duration.ofSeconds(30));
+				collectRecords(
+						DLT_TOPIC,
+						1,
+						Duration.ofSeconds(30),
+						value -> value.contains(eventId.toString())
+				);
 
 		assertThat(dltRecords).isNotEmpty();
 		assertThat(totalPackages()).isEqualTo(before);
@@ -274,10 +392,19 @@ class PackageCreateRequestConsumerIntegrationTest {
 		}
 	}
 
+	/**
+	 * Collects records from {@code topic} matching {@code valueFilter}, ignoring
+	 * anything else already sitting there. The DLT and retry topics are shared
+	 * across every test method in this class (one static Kafka container), so
+	 * without this filter a test could pass merely because an *earlier* test
+	 * already deposited an unrelated record on the same topic — it would prove
+	 * "the topic is non-empty", not "this test's message actually got there".
+	 */
 	private List<ConsumerRecord<String, String>> collectRecords(
 			final String topic,
 			final int minCount,
-			final Duration timeout
+			final Duration timeout,
+			final Predicate<String> valueFilter
 	) {
 		final Map<String, Object> consumerProps = Map.of(
 				ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
@@ -305,7 +432,11 @@ class PackageCreateRequestConsumerIntegrationTest {
 					.atMost(timeout)
 					.pollInSameThread()
 					.untilAsserted(() -> {
-						consumer.poll(Duration.ofMillis(200)).forEach(collected::add);
+						consumer.poll(Duration.ofMillis(200)).forEach(record -> {
+							if (valueFilter.test(record.value())) {
+								collected.add(record);
+							}
+						});
 						assertThat(collected.size()).isGreaterThanOrEqualTo(minCount);
 					});
 		}

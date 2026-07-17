@@ -49,8 +49,8 @@ public class PackageCreateRequestConsumer {
 			autoCreateTopics = "true"
 	)
 	@KafkaListener(
-			topics = "${app.kafka.topics.package-create-requests}",
-			groupId = "${spring.kafka.consumer.group-id}"
+			topics = "${app.kafka.topics.package-create-requests}", // czyta z topicu package-create-requests
+			groupId = "${spring.kafka.consumer.group-id}" // nalezy do consumer groupy packing-group
 	)
 	public void consume(final String message) {
 		final PackageCreateRequestEvent event =
