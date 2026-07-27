@@ -8,8 +8,6 @@ import org.springframework.kafka.annotation.BackOff;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.stereotype.Component;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 
 @Component
 @ConditionalOnProperty(
@@ -19,14 +17,11 @@ import tools.jackson.databind.ObjectMapper;
 )
 public class PackageCreateRequestConsumer {
 
-	private final ObjectMapper objectMapper;
 	private final PackageCreateRequestProcessor processor;
 
 	public PackageCreateRequestConsumer(
-			final ObjectMapper objectMapper,
 			final PackageCreateRequestProcessor processor
 	) {
-		this.objectMapper = objectMapper;
 		this.processor = processor;
 	}
 
@@ -52,26 +47,7 @@ public class PackageCreateRequestConsumer {
 			topics = "${app.kafka.topics.package-create-requests}", // czyta z topicu package-create-requests
 			groupId = "${spring.kafka.consumer.group-id}" // nalezy do consumer groupy packing-group
 	)
-	public void consume(final String message) {
-		final PackageCreateRequestEvent event =
-				parseMessage(message);
-
+	public void consume(final PackageCreateRequestEvent event) {
 		processor.process(event);
-	}
-
-	private PackageCreateRequestEvent parseMessage(
-			final String message
-	) {
-		try {
-			return objectMapper.readValue(
-					message,
-					PackageCreateRequestEvent.class
-			);
-		} catch (final JacksonException exception) {
-			throw new NonRetryableKafkaProcessingException(
-					"Invalid package create request Kafka message.",
-					exception
-			);
-		}
 	}
 }

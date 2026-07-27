@@ -14,13 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -35,20 +29,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
 
-@Testcontainers
+/**
+ * Wariant end-to-end: OutboxEventRelay publikuje na prawdziwy broker
+ * Kafka, więc test potrzebuje zarówno Postgresa, jak i Kafki.
+ * Scenariusz z wyczerpaniem prób (bez realnej publikacji) jest w
+ * {@link OutboxEventRelayDatabaseOnlyIntegrationTest}.
+ */
 @SpringBootTest
 @ActiveProfiles("kafka-integration-test")
-class OutboxEventRelayIntegrationTest {
-
-	@Container
-	static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17")
-			.withDatabaseName("app_db")
-			.withUsername("app_user")
-			.withPassword("app_password");
-	@Container
-	static final KafkaContainer kafka = new KafkaContainer("apache/kafka-native:3.8.0");
+class OutboxEventRelayIntegrationTest extends AbstractKafkaPostgresIntegrationTest {
 
 	private static final String TOPIC = "outbox-relay-test-topic";
 
@@ -63,15 +53,6 @@ class OutboxEventRelayIntegrationTest {
 	@SuppressWarnings("rawtypes")
 	private KafkaTemplate kafkaTemplate;
 
-	@DynamicPropertySource
-	static void registerProperties(final DynamicPropertyRegistry registry) {
-		registry.add("spring.datasource.url", postgres::getJdbcUrl);
-		registry.add("spring.datasource.username", postgres::getUsername);
-		registry.add("spring.datasource.password", postgres::getPassword);
-
-		registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
-	}
-
 	@AfterEach
 	void resetSpy() {
 		Mockito.reset(kafkaTemplate);
@@ -85,7 +66,7 @@ class OutboxEventRelayIntegrationTest {
 		outboxEventRepository.saveAndFlush(event);
 
 		// when / then
-		await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> {
+		await().atMost(Duration.ofSeconds(15)).pollInterval(Duration.ofSeconds(1L)).untilAsserted(() -> {
 			final OutboxEventEntity reloaded =
 					outboxEventRepository.findById(event.getId()).orElseThrow();
 
@@ -125,26 +106,6 @@ class OutboxEventRelayIntegrationTest {
 
 			assertThat(reloaded.getStatus()).isEqualTo(OutboxEventStatus.PUBLISHED);
 			assertThat(reloaded.getAttempts()).isEqualTo(2);
-		});
-	}
-
-	@Test
-	void shouldMarkOutboxEventFailedAfterExhaustingMaxAttempts() {
-		// given
-		doThrow(new RuntimeException("Simulated persistent Kafka failure"))
-				.when(kafkaTemplate).send(anyString(), anyString(), anyString());
-
-		final OutboxEventEntity event =
-				newOutboxEvent(UUID.randomUUID(), "{\"never\":\"published\"}");
-		outboxEventRepository.saveAndFlush(event);
-
-		// when / then
-		await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> {
-			final OutboxEventEntity reloaded =
-					outboxEventRepository.findById(event.getId()).orElseThrow();
-
-			assertThat(reloaded.getStatus()).isEqualTo(OutboxEventStatus.FAILED);
-			assertThat(reloaded.getAttempts()).isEqualTo(5);
 		});
 	}
 

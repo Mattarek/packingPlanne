@@ -17,13 +17,7 @@ import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -43,32 +37,15 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
-@Testcontainers
 @SpringBootTest
 @ActiveProfiles("kafka-integration-test")
-class PackageCreateRequestConsumerIntegrationTest {
+class PackageCreateRequestConsumerIntegrationTest extends AbstractKafkaPostgresIntegrationTest {
 
-	@Container
-	static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17")
-			.withDatabaseName("app_db")
-			.withUsername("app_user")
-			.withPassword("app_password");
-	@Container
-	static final KafkaContainer kafka = new KafkaContainer("apache/kafka-native:3.8.0");
 	private static final String TOPIC = "package-create-requests";
 	private static final String DLT_TOPIC = TOPIC + ".DLT";
 
 	@MockitoSpyBean
 	private PackageService packageService;
-
-	@DynamicPropertySource
-	static void registerProperties(final DynamicPropertyRegistry registry) {
-		registry.add("spring.datasource.url", postgres::getJdbcUrl);
-		registry.add("spring.datasource.username", postgres::getUsername);
-		registry.add("spring.datasource.password", postgres::getPassword);
-
-		registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
-	}
 
 	@AfterEach
 	void resetSpy() {
