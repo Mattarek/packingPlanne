@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -49,7 +48,8 @@ class OutboxEventRelayIntegrationTest extends AbstractKafkaPostgresIntegrationTe
 	// as KafkaTemplate<?, ?> in KafkaAutoConfiguration, and @MockitoSpyBean
 	// matches beans by exact generic type — KafkaTemplate<String, String>
 	// would not resolve to any bean and fail context startup.
-	@MockitoSpyBean
+
+	@Autowired
 	@SuppressWarnings("rawtypes")
 	private KafkaTemplate kafkaTemplate;
 

@@ -155,4 +155,11 @@ public class PackageCreateRequestProcessor {
 			);
 		}
 	}
+
+	//@TODO rozmiary paczek, czy mieszcza sie w pojezdzie
+	//@TODO zla waga
+	//@TODO polityka firmy, ktorych produktow nie przewozimy
+	//@TODO walidator do paczek i serializacji
+	//@TODO happypath - logowanie, ze cos zostalo przyjete
+	//@TODO jak generycznie stworzyc producera
 }
