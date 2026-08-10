@@ -1,5 +1,6 @@
 package org.example.packing.infrastructure.kafka;
 
+import org.example.packing.infrastructure.kafka.support.PostgresOnlyContainerInitializer;
 import org.example.packing.infrastructure.persistence.entity.OutboxEventEntity;
 import org.example.packing.infrastructure.persistence.entity.OutboxEventStatus;
 import org.example.packing.infrastructure.persistence.repository.OutboxEventRepository;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.Duration;
@@ -19,15 +21,10 @@ import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 
-/**
- * Wariant testujący samą warstwę bazodanową relaya: OutboxEventRelay
- * korzysta tu z w pełni zamockowanego {@link KafkaTemplate} (żadnej
- * prawdziwej publikacji), więc do testu potrzebny jest wyłącznie
- * kontener Postgresa — bez Kafki.
- */
 @SpringBootTest
 @ActiveProfiles("kafka-integration-test")
-class OutboxEventRelayDatabaseOnlyIntegrationTest extends AbstractPostgresIntegrationTest {
+@ContextConfiguration(initializers = PostgresOnlyContainerInitializer.class)
+class OutboxEventRelayDatabaseOnlyIntegrationTest {
 
 	private static final String TOPIC = "outbox-relay-test-topic";
 

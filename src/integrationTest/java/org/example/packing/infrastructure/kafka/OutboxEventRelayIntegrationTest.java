@@ -4,6 +4,8 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.example.packing.infrastructure.kafka.support.KafkaContainerHandler;
+import org.example.packing.infrastructure.kafka.support.KafkaPostgresContainersInitializer;
 import org.example.packing.infrastructure.persistence.entity.OutboxEventEntity;
 import org.example.packing.infrastructure.persistence.entity.OutboxEventStatus;
 import org.example.packing.infrastructure.persistence.repository.OutboxEventRepository;
@@ -14,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -29,15 +32,10 @@ import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 
-/**
- * Wariant end-to-end: OutboxEventRelay publikuje na prawdziwy broker
- * Kafka, więc test potrzebuje zarówno Postgresa, jak i Kafki.
- * Scenariusz z wyczerpaniem prób (bez realnej publikacji) jest w
- * {@link OutboxEventRelayDatabaseOnlyIntegrationTest}.
- */
 @SpringBootTest
 @ActiveProfiles("kafka-integration-test")
-class OutboxEventRelayIntegrationTest extends AbstractKafkaPostgresIntegrationTest {
+@ContextConfiguration(initializers = KafkaPostgresContainersInitializer.class)
+class OutboxEventRelayIntegrationTest {
 
 	private static final String TOPIC = "outbox-relay-test-topic";
 
@@ -132,7 +130,7 @@ class OutboxEventRelayIntegrationTest extends AbstractKafkaPostgresIntegrationTe
 	) {
 		final Map<String, Object> consumerProps = Map.of(
 				ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-				kafka.getBootstrapServers(),
+				KafkaContainerHandler.container().getBootstrapServers(),
 
 				ConsumerConfig.GROUP_ID_CONFIG,
 				"test-consumer-" + UUID.randomUUID(),

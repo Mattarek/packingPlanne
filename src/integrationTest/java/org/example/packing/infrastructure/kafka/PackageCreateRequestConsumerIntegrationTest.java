@@ -9,6 +9,8 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.example.packing.application.service.PackageService;
+import org.example.packing.infrastructure.kafka.support.KafkaContainerHandler;
+import org.example.packing.infrastructure.kafka.support.KafkaPostgresContainersInitializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -17,6 +19,7 @@ import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.time.Duration;
@@ -39,7 +42,8 @@ import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @ActiveProfiles("kafka-integration-test")
-class PackageCreateRequestConsumerIntegrationTest extends AbstractKafkaPostgresIntegrationTest {
+@ContextConfiguration(initializers = KafkaPostgresContainersInitializer.class)
+class PackageCreateRequestConsumerIntegrationTest {
 
 	private static final String TOPIC = "package-create-requests";
 	private static final String DLT_TOPIC = TOPIC + ".DLT";
@@ -327,7 +331,7 @@ class PackageCreateRequestConsumerIntegrationTest extends AbstractKafkaPostgresI
 	private KafkaTemplate<String, String> kafkaTemplate() {
 		final Map<String, Object> properties = Map.of(
 				ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
-				kafka.getBootstrapServers(),
+				KafkaContainerHandler.container().getBootstrapServers(),
 
 				ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
 				StringSerializer.class,
@@ -344,7 +348,7 @@ class PackageCreateRequestConsumerIntegrationTest extends AbstractKafkaPostgresI
 	private String discoverRetryTopicName() {
 		final Map<String, Object> adminProps = Map.of(
 				AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
-				kafka.getBootstrapServers()
+				KafkaContainerHandler.container().getBootstrapServers()
 		);
 
 		try (final AdminClient adminClient = AdminClient.create(adminProps)) {
@@ -377,7 +381,7 @@ class PackageCreateRequestConsumerIntegrationTest extends AbstractKafkaPostgresI
 	) {
 		final Map<String, Object> consumerProps = Map.of(
 				ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-				kafka.getBootstrapServers(),
+				KafkaContainerHandler.container().getBootstrapServers(),
 
 				ConsumerConfig.GROUP_ID_CONFIG,
 				"test-consumer-" + UUID.randomUUID(),
