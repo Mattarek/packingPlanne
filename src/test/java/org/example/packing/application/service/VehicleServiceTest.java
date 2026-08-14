@@ -75,6 +75,8 @@ class VehicleServiceTest {
 	@Test
 	void shouldCreateVehicles() {
 		// given
+		stubValidVehicleRequest();
+
 		when(vehicleMapper.toEntityList(vehicleRequests))
 				.thenReturn(vehicleEntities);
 
@@ -95,6 +97,60 @@ class VehicleServiceTest {
 		verify(vehicleMapper).toResponseList(vehicleEntities);
 
 		verifyNoMoreInteractions(vehicleMapper, vehicleRepository);
+	}
+
+	@Test
+	void shouldRejectVehicleWithNonPositiveDimensionWithoutTouchingRepository() {
+		// given: Dimensions checks length, then width, then height —
+		// only stub what's actually evaluated before it short-circuits.
+		when(vehicleRequest.length()).thenReturn(420.0);
+		when(vehicleRequest.width()).thenReturn(0.0);
+
+		// when & then
+		assertThatThrownBy(() -> vehicleService.createVehicles(vehicleRequests))
+				.isInstanceOf(IllegalArgumentException.class);
+
+		verifyNoInteractions(vehicleMapper, vehicleRepository);
+	}
+
+	@Test
+	void shouldRejectVehicleWithInfiniteDimensionWithoutTouchingRepository() {
+		// given: length fails first, so Dimensions never reaches width/height.
+		when(vehicleRequest.length()).thenReturn(Double.POSITIVE_INFINITY);
+
+		// when & then
+		assertThatThrownBy(() -> vehicleService.createVehicles(vehicleRequests))
+				.isInstanceOf(IllegalArgumentException.class);
+
+		verifyNoInteractions(vehicleMapper, vehicleRepository);
+	}
+
+	@Test
+	void shouldRejectVehicleWithNegativeMaxPayloadWithoutTouchingRepository() {
+		// given
+		stubVehicleRequest(420.0, 180.0, 200.0, -1000.0);
+
+		// when & then
+		assertThatThrownBy(() -> vehicleService.createVehicles(vehicleRequests))
+				.isInstanceOf(IllegalArgumentException.class);
+
+		verifyNoInteractions(vehicleMapper, vehicleRepository);
+	}
+
+	private void stubValidVehicleRequest() {
+		stubVehicleRequest(420.0, 180.0, 200.0, 1000.0);
+	}
+
+	private void stubVehicleRequest(
+			final double length,
+			final double width,
+			final double height,
+			final double maxPayload
+	) {
+		when(vehicleRequest.length()).thenReturn(length);
+		when(vehicleRequest.width()).thenReturn(width);
+		when(vehicleRequest.height()).thenReturn(height);
+		when(vehicleRequest.maxPayload()).thenReturn(maxPayload);
 	}
 
 	@Test

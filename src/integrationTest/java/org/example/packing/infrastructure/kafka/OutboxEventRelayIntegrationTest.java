@@ -17,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -42,12 +43,13 @@ class OutboxEventRelayIntegrationTest {
 	@Autowired
 	private OutboxEventRepository outboxEventRepository;
 
-	// Raw type on purpose: the auto-configured KafkaTemplate bean is declared
-	// as KafkaTemplate<?, ?> in KafkaAutoConfiguration, and @MockitoSpyBean
-	// matches beans by exact generic type — KafkaTemplate<String, String>
-	// would not resolve to any bean and fail context startup.
+	// Raw type on purpose: the app's KafkaTemplate bean is declared as
+	// KafkaTemplate<String, Object> (see KafkaRetryTemplateConfiguration),
+	// and @MockitoSpyBean matches beans by exact generic type —
+	// KafkaTemplate<String, String> would not resolve to any bean and fail
+	// context startup.
 
-	@Autowired
+	@MockitoSpyBean
 	@SuppressWarnings("rawtypes")
 	private KafkaTemplate kafkaTemplate;
 

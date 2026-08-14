@@ -3,6 +3,9 @@ package org.example.packing.application.service;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.example.packing.application.dto.PackageRequest;
+import org.example.packing.domain.exception.PackageNotAcceptedException;
+import org.example.packing.domain.model.FragilityLevel;
+import org.example.packing.domain.model.ProductCategory;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestEvent;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestItem;
 import org.example.packing.infrastructure.kafka.exception.NonRetryableKafkaProcessingException;
@@ -71,7 +74,10 @@ class PackageCreateRequestProcessorTest {
 				UUID.randomUUID(),
 				"PACKAGE_CREATE_REQUESTED",
 				1,
-				List.of(new PackageCreateRequestItem(-10.0, 20.0, 30.0, 5.5))
+				List.of(new PackageCreateRequestItem(
+						-10.0, 20.0, 30.0, 5.5,
+						ProductCategory.STANDARD, FragilityLevel.STANDARD
+				))
 		);
 
 		assertThatThrownBy(() -> processor.process(event))
@@ -86,7 +92,10 @@ class PackageCreateRequestProcessorTest {
 				UUID.randomUUID(),
 				"UNKNOWN_EVENT_TYPE",
 				1,
-				List.of(new PackageCreateRequestItem(10.0, 20.0, 30.0, 5.5))
+				List.of(new PackageCreateRequestItem(
+						10.0, 20.0, 30.0, 5.5,
+						ProductCategory.STANDARD, FragilityLevel.STANDARD
+				))
 		);
 
 		assertThatThrownBy(() -> processor.process(event))
@@ -101,7 +110,10 @@ class PackageCreateRequestProcessorTest {
 				UUID.randomUUID(),
 				"PACKAGE_CREATE_REQUESTED",
 				2,
-				List.of(new PackageCreateRequestItem(10.0, 20.0, 30.0, 5.5))
+				List.of(new PackageCreateRequestItem(
+						10.0, 20.0, 30.0, 5.5,
+						ProductCategory.STANDARD, FragilityLevel.STANDARD
+				))
 		);
 
 		assertThatThrownBy(() -> processor.process(event))
@@ -116,7 +128,10 @@ class PackageCreateRequestProcessorTest {
 				UUID.randomUUID(),
 				"PACKAGE_CREATE_REQUESTED",
 				1,
-				List.of(new PackageCreateRequestItem(10.0, 20.0, 30.0, 5.5))
+				List.of(new PackageCreateRequestItem(
+						10.0, 20.0, 30.0, 5.5,
+						ProductCategory.STANDARD, FragilityLevel.STANDARD
+				))
 		);
 
 		when(inboxEventRepository.insertIgnoringDuplicate(
@@ -134,7 +149,10 @@ class PackageCreateRequestProcessorTest {
 				UUID.randomUUID(),
 				"PACKAGE_CREATE_REQUESTED",
 				1,
-				List.of(new PackageCreateRequestItem(10.0, 20.0, 30.0, 5.5))
+				List.of(new PackageCreateRequestItem(
+						10.0, 20.0, 30.0, 5.5,
+						ProductCategory.STANDARD, FragilityLevel.STANDARD
+				))
 		);
 
 		when(inboxEventRepository.insertIgnoringDuplicate(
@@ -160,7 +178,10 @@ class PackageCreateRequestProcessorTest {
 				UUID.randomUUID(),
 				"PACKAGE_CREATE_REQUESTED",
 				1,
-				List.of(new PackageCreateRequestItem(10.0, 20.0, 30.0, 5.5))
+				List.of(new PackageCreateRequestItem(
+						10.0, 20.0, 30.0, 5.5,
+						ProductCategory.STANDARD, FragilityLevel.STANDARD
+				))
 		);
 
 		when(inboxEventRepository.insertIgnoringDuplicate(
@@ -179,7 +200,10 @@ class PackageCreateRequestProcessorTest {
 				UUID.randomUUID(),
 				"PACKAGE_CREATE_REQUESTED",
 				1,
-				List.of(new PackageCreateRequestItem(10.0, 20.0, 30.0, 5.5))
+				List.of(new PackageCreateRequestItem(
+						10.0, 20.0, 30.0, 5.5,
+						ProductCategory.STANDARD, FragilityLevel.STANDARD
+				))
 		);
 
 		when(inboxEventRepository.insertIgnoringDuplicate(
@@ -198,7 +222,10 @@ class PackageCreateRequestProcessorTest {
 				UUID.randomUUID(),
 				"PACKAGE_CREATE_REQUESTED",
 				1,
-				List.of(new PackageCreateRequestItem(10.0, 20.0, 30.0, 5.5))
+				List.of(new PackageCreateRequestItem(
+						10.0, 20.0, 30.0, 5.5,
+						ProductCategory.STANDARD, FragilityLevel.STANDARD
+				))
 		);
 
 		when(inboxEventRepository.insertIgnoringDuplicate(
@@ -212,12 +239,37 @@ class PackageCreateRequestProcessorTest {
 	}
 
 	@Test
+	void shouldMapPackageNotAcceptedOnCreatePackagesToNonRetryable() {
+		final PackageCreateRequestEvent event = validEvent(
+				UUID.randomUUID(),
+				"PACKAGE_CREATE_REQUESTED",
+				1,
+				List.of(new PackageCreateRequestItem(
+						10.0, 20.0, 30.0, 5.5,
+						ProductCategory.STANDARD, FragilityLevel.STANDARD
+				))
+		);
+
+		when(inboxEventRepository.insertIgnoringDuplicate(
+				any(), any(), anyString(), any()
+		)).thenReturn(1);
+		when(packageService.createPackages(any()))
+				.thenThrow(new PackageNotAcceptedException("weight too high"));
+
+		assertThatThrownBy(() -> processor.process(event))
+				.isInstanceOf(NonRetryableKafkaProcessingException.class);
+	}
+
+	@Test
 	void shouldMapDataIntegrityViolationOnCreatePackagesToNonRetryable() {
 		final PackageCreateRequestEvent event = validEvent(
 				UUID.randomUUID(),
 				"PACKAGE_CREATE_REQUESTED",
 				1,
-				List.of(new PackageCreateRequestItem(10.0, 20.0, 30.0, 5.5))
+				List.of(new PackageCreateRequestItem(
+						10.0, 20.0, 30.0, 5.5,
+						ProductCategory.STANDARD, FragilityLevel.STANDARD
+				))
 		);
 
 		when(inboxEventRepository.insertIgnoringDuplicate(

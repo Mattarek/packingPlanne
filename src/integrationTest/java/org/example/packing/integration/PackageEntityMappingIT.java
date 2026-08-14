@@ -1,5 +1,7 @@
 package org.example.packing.integration;
 
+import org.example.packing.domain.model.FragilityLevel;
+import org.example.packing.domain.model.ProductCategory;
 import org.example.packing.infrastructure.persistence.entity.PackageEntity;
 import org.example.packing.infrastructure.persistence.repository.PackageRepository;
 import org.junit.jupiter.api.Test;
@@ -27,7 +29,9 @@ public class PackageEntityMappingIT extends AbstractPostgresIntegrationTest {
 				10.0,
 				20.0,
 				30.0,
-				5.5
+				5.5,
+				ProductCategory.STANDARD,
+				FragilityLevel.STANDARD
 		);
 
 		packageRepository.saveAndFlush(packageEntity);

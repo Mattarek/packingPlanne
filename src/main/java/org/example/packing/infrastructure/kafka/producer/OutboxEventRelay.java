@@ -5,6 +5,7 @@ import org.example.packing.infrastructure.persistence.entity.OutboxEventStatus;
 import org.example.packing.infrastructure.persistence.repository.OutboxEventRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -25,19 +26,21 @@ public class OutboxEventRelay {
 	private static final Logger log =
 			LoggerFactory.getLogger(OutboxEventRelay.class);
 
-	private static final int BATCH_SIZE = 100;
-
-	private static final int MAX_ATTEMPTS = 5;
-
 	private final OutboxEventRepository outboxEventRepository;
-	private final KafkaTemplate<String, String> kafkaTemplate;
+	private final KafkaTemplate<String, Object> kafkaTemplate;
+	private final int batchSize;
+	private final int maxAttempts;
 
 	public OutboxEventRelay(
 			final OutboxEventRepository outboxEventRepository,
-			final KafkaTemplate<String, String> kafkaTemplate
+			final KafkaTemplate<String, Object> kafkaTemplate,
+			@Value("${app.kafka.outbox.batch-size:100}") final int batchSize,
+			@Value("${app.kafka.outbox.max-attempts:5}") final int maxAttempts
 	) {
 		this.outboxEventRepository = outboxEventRepository;
 		this.kafkaTemplate = kafkaTemplate;
+		this.batchSize = batchSize;
+		this.maxAttempts = maxAttempts;
 	}
 
 	@Scheduled(
@@ -48,7 +51,7 @@ public class OutboxEventRelay {
 		final List<OutboxEventEntity> batch =
 				outboxEventRepository.findNextBatch(
 						OutboxEventStatus.NEW,
-						PageRequest.of(0, BATCH_SIZE)
+						PageRequest.of(0, batchSize)
 				);
 
 		for (final OutboxEventEntity event : batch) {
@@ -74,7 +77,7 @@ public class OutboxEventRelay {
 					event.getTopicName()
 			);
 		} catch (final Exception exception) {
-			if (event.getAttempts() + 1 >= MAX_ATTEMPTS) {
+			if (event.getAttempts() + 1 >= maxAttempts) {
 				event.markFailed();
 
 				log.error(

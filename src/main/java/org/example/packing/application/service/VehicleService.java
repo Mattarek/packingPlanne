@@ -3,6 +3,8 @@ package org.example.packing.application.service;
 import org.example.packing.application.dto.VehicleRequest;
 import org.example.packing.application.dto.VehicleResponse;
 import org.example.packing.domain.exception.VehicleNotFoundException;
+import org.example.packing.domain.model.Dimensions;
+import org.example.packing.domain.model.Weight;
 import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
 import org.example.packing.infrastructure.persistence.mapper.VehiclePersistenceMapper;
 import org.example.packing.infrastructure.persistence.repository.VehicleRepository;
@@ -32,10 +34,25 @@ public class VehicleService {
 
 	@Transactional
 	public List<VehicleResponse> createVehicles(final List<VehicleRequest> vehicles) {
+		vehicles.forEach(this::validateInvariants);
+
 		final List<VehiclesEntity> entities = vehicleMapper.toEntityList(vehicles);
 		final List<VehiclesEntity> savedEntities = vehicleRepository.saveAll(entities);
 
 		return vehicleMapper.toResponseList(savedEntities);
+	}
+
+	/**
+	 * Builds the domain value objects for a requested vehicle's cargo area and
+	 * payload, so their invariants (positive finite dimensions, non-negative
+	 * weight) are enforced the same way as for packages — see
+	 * {@link PackageService}. Bean Validation on {@link VehicleRequest} already
+	 * rejects non-positive values; this additionally catches cases it can't,
+	 * such as infinite values.
+	 */
+	private void validateInvariants(final VehicleRequest request) {
+		new Dimensions(request.length(), request.width(), request.height());
+		new Weight(request.maxPayload());
 	}
 
 	@Transactional(readOnly = true)

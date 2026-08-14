@@ -1,5 +1,8 @@
 package org.example.packing.application.dto;
 
+import org.example.packing.domain.model.FragilityLevel;
+import org.example.packing.domain.model.ProductCategory;
+
 import java.util.UUID;
 
 public record PackageResponse(
@@ -7,6 +10,8 @@ public record PackageResponse(
 		double length,
 		double width,
 		double height,
-		double weight
+		double weight,
+		ProductCategory category,
+		FragilityLevel fragility
 ) {
 }

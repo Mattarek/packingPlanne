@@ -145,7 +145,9 @@ class PackageCreateRequestConsumerIntegrationTest {
 				      "length": 10.0,
 				      "width": 20.0,
 				      "height": 30.0,
-				      "weight": 5.5
+				      "weight": 5.5,
+				      "category": "STANDARD",
+				      "fragility": "STANDARD"
 				    }
 				  ]
 				}
@@ -207,7 +209,9 @@ class PackageCreateRequestConsumerIntegrationTest {
 				      "length": 10.0,
 				      "width": 20.0,
 				      "height": 30.0,
-				      "weight": 5.5
+				      "weight": 5.5,
+				      "category": "STANDARD",
+				      "fragility": "STANDARD"
 				    }
 				  ]
 				}
@@ -245,7 +249,9 @@ class PackageCreateRequestConsumerIntegrationTest {
 				      "length": -10.0,
 				      "width": 20.0,
 				      "height": 30.0,
-				      "weight": 5.5
+				      "weight": 5.5,
+				      "category": "STANDARD",
+				      "fragility": "STANDARD"
 				    }
 				  ]
 				}
@@ -309,13 +315,17 @@ class PackageCreateRequestConsumerIntegrationTest {
 				      "length": 10.0,
 				      "width": 20.0,
 				      "height": 30.0,
-				      "weight": 5.5
+				      "weight": 5.5,
+				      "category": "STANDARD",
+				      "fragility": "STANDARD"
 				    },
 				    {
 				      "length": 15.0,
 				      "width": 25.0,
 				      "height": 35.0,
-				      "weight": 7.2
+				      "weight": 7.2,
+				      "category": "STANDARD",
+				      "fragility": "STANDARD"
 				    }
 				  ]
 				}

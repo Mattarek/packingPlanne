@@ -1,6 +1,9 @@
 package org.example.packing.infrastructure.kafka.event;
 
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import org.example.packing.domain.model.FragilityLevel;
+import org.example.packing.domain.model.ProductCategory;
 
 public record PackageCreateRequestItem(
 		@Positive(message = "Length must be positive.")
@@ -13,6 +16,12 @@ public record PackageCreateRequestItem(
 		double height,
 
 		@Positive(message = "Weight must be positive.")
-		double weight
+		double weight,
+
+		@NotNull(message = "Category must not be null.")
+		ProductCategory category,
+
+		@NotNull(message = "Fragility must not be null.")
+		FragilityLevel fragility
 ) {
 }

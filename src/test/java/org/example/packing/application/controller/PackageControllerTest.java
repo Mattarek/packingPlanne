@@ -3,6 +3,8 @@ package org.example.packing.application.controller;
 import org.example.packing.application.dto.PackageRequest;
 import org.example.packing.application.dto.PackageResponse;
 import org.example.packing.application.service.PackageService;
+import org.example.packing.domain.model.FragilityLevel;
+import org.example.packing.domain.model.ProductCategory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,14 +71,18 @@ class PackageControllerTest {
 				90.0,
 				60.0,
 				50.0,
-				200.0
+				200.0,
+				ProductCategory.STANDARD,
+				FragilityLevel.STANDARD
 		);
 
 		packageRequest2 = new PackageRequest(
 				40.0,
 				20.0,
 				10.0,
-				10.0
+				10.0,
+				ProductCategory.ELECTRONICS,
+				FragilityLevel.FRAGILE
 		);
 
 		singlePackageRequest = packageRequest1;
@@ -86,7 +92,9 @@ class PackageControllerTest {
 				90.0,
 				60.0,
 				50.0,
-				200.0
+				200.0,
+				ProductCategory.STANDARD,
+				FragilityLevel.STANDARD
 		);
 
 		packageResponse2 = new PackageResponse(
@@ -94,7 +102,9 @@ class PackageControllerTest {
 				40.0,
 				20.0,
 				10.0,
-				10.0
+				10.0,
+				ProductCategory.ELECTRONICS,
+				FragilityLevel.FRAGILE
 		);
 
 		singlePackageResponse = packageResponse1;

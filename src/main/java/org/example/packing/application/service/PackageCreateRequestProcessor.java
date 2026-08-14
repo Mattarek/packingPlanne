@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.example.packing.application.dto.PackageRequest;
 import org.example.packing.application.dto.PackageResponse;
+import org.example.packing.domain.exception.PackageNotAcceptedException;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestEvent;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestItem;
 import org.example.packing.infrastructure.kafka.exception.NonRetryableKafkaProcessingException;
@@ -101,6 +102,12 @@ public class PackageCreateRequestProcessor {
 							+ event.eventId(),
 					exception
 			);
+		} catch (final PackageNotAcceptedException exception) {
+			throw new NonRetryableKafkaProcessingException(
+					"Package rejected by acceptance policy: eventId="
+							+ event.eventId(),
+					exception
+			);
 		}
 
 		log.info(
@@ -118,7 +125,9 @@ public class PackageCreateRequestProcessor {
 						item.length(),
 						item.width(),
 						item.height(),
-						item.weight()
+						item.weight(),
+						item.category(),
+						item.fragility()
 				))
 				.toList();
 	}
@@ -156,10 +165,5 @@ public class PackageCreateRequestProcessor {
 		}
 	}
 
-	//@TODO rozmiary paczek, czy mieszcza sie w pojezdzie
-	//@TODO zla waga
-	//@TODO polityka firmy, ktorych produktow nie przewozimy
-	//@TODO walidator do paczek i serializacji
-	//@TODO happypath - logowanie, ze cos zostalo przyjete
 	//@TODO jak generycznie stworzyc producera
 }

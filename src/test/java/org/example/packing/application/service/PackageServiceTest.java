@@ -2,7 +2,11 @@ package org.example.packing.application.service;
 
 import org.example.packing.application.dto.PackageRequest;
 import org.example.packing.application.dto.PackageResponse;
+import org.example.packing.domain.exception.PackageNotAcceptedException;
 import org.example.packing.domain.exception.PackageNotFoundException;
+import org.example.packing.domain.model.FragilityLevel;
+import org.example.packing.domain.model.ProductCategory;
+import org.example.packing.infrastructure.kafka.producer.PackageCreatedEventPublisher;
 import org.example.packing.infrastructure.persistence.entity.PackageEntity;
 import org.example.packing.infrastructure.persistence.mapper.PackagePersistenceMapper;
 import org.example.packing.infrastructure.persistence.repository.PackageRepository;
@@ -42,6 +46,9 @@ class PackageServiceTest {
 	@Mock
 	private PackagePersistenceMapper packageMapper;
 
+	@Mock
+	private PackageCreatedEventPublisher packageCreatedEventPublisher;
+
 	@InjectMocks
 	private PackageService packageService;
 
@@ -71,6 +78,8 @@ class PackageServiceTest {
 	@Test
 	void shouldCreatePackages() {
 		// given
+		stubAcceptablePackageRequest();
+
 		when(packageMapper.toEntityList(packageRequests))
 				.thenReturn(packageEntities);
 
@@ -89,8 +98,77 @@ class PackageServiceTest {
 		verify(packageMapper).toEntityList(packageRequests);
 		verify(packageRepository).saveAll(packageEntities);
 		verify(packageMapper).toResponseList(packageEntities);
+		verify(packageCreatedEventPublisher).publish(packageResponses);
 
-		verifyNoMoreInteractions(packageMapper, packageRepository);
+		verifyNoMoreInteractions(packageMapper, packageRepository, packageCreatedEventPublisher);
+	}
+
+	@Test
+	void shouldRejectPackageExceedingMaxAcceptedWeightWithoutTouchingRepository() {
+		// given
+		stubPackageRequest(10.0, 20.0, 30.0, 31.0, ProductCategory.STANDARD, FragilityLevel.STANDARD);
+
+		// when & then
+		assertThatThrownBy(() -> packageService.createPackages(packageRequests))
+				.isInstanceOf(PackageNotAcceptedException.class);
+
+		verifyNoInteractions(packageMapper, packageRepository, packageCreatedEventPublisher);
+	}
+
+	@Test
+	void shouldRejectPackageExceedingMaxAcceptedDimensionsWithoutTouchingRepository() {
+		// given
+		stubPackageRequest(500.0, 20.0, 30.0, 5.0, ProductCategory.STANDARD, FragilityLevel.STANDARD);
+
+		// when & then
+		assertThatThrownBy(() -> packageService.createPackages(packageRequests))
+				.isInstanceOf(PackageNotAcceptedException.class);
+
+		verifyNoInteractions(packageMapper, packageRepository, packageCreatedEventPublisher);
+	}
+
+	@Test
+	void shouldRejectNonTransportableProductCategoryWithoutTouchingRepository() {
+		// given
+		stubPackageRequest(10.0, 20.0, 30.0, 5.0, ProductCategory.HAZARDOUS_MATERIAL, FragilityLevel.STANDARD);
+
+		// when & then
+		assertThatThrownBy(() -> packageService.createPackages(packageRequests))
+				.isInstanceOf(PackageNotAcceptedException.class);
+
+		verifyNoInteractions(packageMapper, packageRepository, packageCreatedEventPublisher);
+	}
+
+	@Test
+	void shouldRejectUltraFragilePackageWithoutTouchingRepository() {
+		// given
+		stubPackageRequest(10.0, 20.0, 30.0, 5.0, ProductCategory.STANDARD, FragilityLevel.ULTRA_FRAGILE);
+
+		// when & then
+		assertThatThrownBy(() -> packageService.createPackages(packageRequests))
+				.isInstanceOf(PackageNotAcceptedException.class);
+
+		verifyNoInteractions(packageMapper, packageRepository, packageCreatedEventPublisher);
+	}
+
+	private void stubAcceptablePackageRequest() {
+		stubPackageRequest(10.0, 20.0, 30.0, 5.0, ProductCategory.STANDARD, FragilityLevel.STANDARD);
+	}
+
+	private void stubPackageRequest(
+			final double length,
+			final double width,
+			final double height,
+			final double weight,
+			final ProductCategory category,
+			final FragilityLevel fragility
+	) {
+		when(packageRequest.length()).thenReturn(length);
+		when(packageRequest.width()).thenReturn(width);
+		when(packageRequest.height()).thenReturn(height);
+		when(packageRequest.weight()).thenReturn(weight);
+		when(packageRequest.category()).thenReturn(category);
+		when(packageRequest.fragility()).thenReturn(fragility);
 	}
 
 	@Test

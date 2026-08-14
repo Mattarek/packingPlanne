@@ -30,4 +30,20 @@ public class KafkaTopicConfiguration {
 				.replicas(1)
 				.build();
 	}
+
+	@Bean
+	public NewTopic packageCreatedEventsTopic(
+			@Value(
+					"${app.kafka.topics.package-created-events}"
+			) final String topicName,
+			@Value(
+					"${app.kafka.topics.partitions:3}"
+			) final int partitions
+	) {
+		return TopicBuilder
+				.name(topicName)
+				.partitions(partitions)
+				.replicas(1)
+				.build();
+	}
 }

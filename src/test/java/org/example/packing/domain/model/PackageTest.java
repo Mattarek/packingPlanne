@@ -41,6 +41,51 @@ class PackageTest {
 	}
 
 	@Test
+	void shouldDefaultCategoryAndFragilityToStandardWhenNotGivenExplicitly() {
+		// when
+		final Package result = new Package(packageId, dimensions, weight);
+
+		// then
+		assertThat(result.category()).isEqualTo(ProductCategory.STANDARD);
+		assertThat(result.fragility()).isEqualTo(FragilityLevel.STANDARD);
+	}
+
+	@Test
+	void shouldCreatePackageWithExplicitCategoryAndFragility() {
+		// when
+		final Package result = new Package(
+				packageId,
+				dimensions,
+				weight,
+				ProductCategory.ELECTRONICS,
+				FragilityLevel.FRAGILE
+		);
+
+		// then
+		assertThat(result.id()).isEqualTo(packageId);
+		assertThat(result.dimensions()).isEqualTo(dimensions);
+		assertThat(result.weight()).isEqualTo(weight);
+		assertThat(result.category()).isEqualTo(ProductCategory.ELECTRONICS);
+		assertThat(result.fragility()).isEqualTo(FragilityLevel.FRAGILE);
+	}
+
+	@Test
+	void shouldThrowExceptionWhenCategoryIsNull() {
+		// when & then
+		assertThatThrownBy(() -> new Package(packageId, dimensions, weight, null, FragilityLevel.STANDARD))
+				.isInstanceOf(NullPointerException.class)
+				.hasMessage("category must not be null");
+	}
+
+	@Test
+	void shouldThrowExceptionWhenFragilityIsNull() {
+		// when & then
+		assertThatThrownBy(() -> new Package(packageId, dimensions, weight, ProductCategory.STANDARD, null))
+				.isInstanceOf(NullPointerException.class)
+				.hasMessage("fragility must not be null");
+	}
+
+	@Test
 	void shouldThrowExceptionWhenIdIsNull() {
 		// when & then
 		assertThatThrownBy(() -> new Package(null, dimensions, weight))
@@ -85,6 +130,19 @@ class PackageTest {
 		assertThat(first.id()).isNotNull();
 		assertThat(second.id()).isNotNull();
 		assertThat(first.id()).isNotEqualTo(second.id());
+	}
+
+	@Test
+	void shouldCreatePackageUsingFactoryMethodWithExplicitCategoryAndFragility() {
+		// when
+		final Package result = Package.of(dimensions, weight, ProductCategory.FOOD, FragilityLevel.FRAGILE);
+
+		// then
+		assertThat(result.id()).isNotNull();
+		assertThat(result.dimensions()).isEqualTo(dimensions);
+		assertThat(result.weight()).isEqualTo(weight);
+		assertThat(result.category()).isEqualTo(ProductCategory.FOOD);
+		assertThat(result.fragility()).isEqualTo(FragilityLevel.FRAGILE);
 	}
 
 	@Test

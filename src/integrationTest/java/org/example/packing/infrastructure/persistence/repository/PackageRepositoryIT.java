@@ -1,5 +1,7 @@
 package org.example.packing.infrastructure.persistence.repository;
 
+import org.example.packing.domain.model.FragilityLevel;
+import org.example.packing.domain.model.ProductCategory;
 import org.example.packing.infrastructure.persistence.entity.PackageEntity;
 import org.example.packing.integration.AbstractPostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
@@ -24,7 +26,9 @@ class PackageRepositoryIT extends AbstractPostgresIntegrationTest {
 				10.0,
 				20.0,
 				30.0,
-				5.5
+				5.5,
+				ProductCategory.STANDARD,
+				FragilityLevel.STANDARD
 		);
 
 		// when
@@ -51,7 +55,9 @@ class PackageRepositoryIT extends AbstractPostgresIntegrationTest {
 				10.0,
 				20.0,
 				30.0,
-				5.5
+				5.5,
+				ProductCategory.STANDARD,
+				FragilityLevel.STANDARD
 		);
 
 		final PackageEntity saved = packageRepository.saveAndFlush(entity);
@@ -72,7 +78,9 @@ class PackageRepositoryIT extends AbstractPostgresIntegrationTest {
 				10.0,
 				20.0,
 				30.0,
-				5.5
+				5.5,
+				ProductCategory.STANDARD,
+				FragilityLevel.STANDARD
 		);
 
 		final PackageEntity second = new PackageEntity(
@@ -80,7 +88,9 @@ class PackageRepositoryIT extends AbstractPostgresIntegrationTest {
 				40.0,
 				50.0,
 				60.0,
-				15.0
+				15.0,
+				ProductCategory.STANDARD,
+				FragilityLevel.STANDARD
 		);
 
 		packageRepository.saveAndFlush(first);
@@ -104,7 +114,9 @@ class PackageRepositoryIT extends AbstractPostgresIntegrationTest {
 				10.0,
 				20.0,
 				30.0,
-				5.5
+				5.5,
+				ProductCategory.STANDARD,
+				FragilityLevel.STANDARD
 		);
 
 		final PackageEntity second = new PackageEntity(
@@ -112,7 +124,9 @@ class PackageRepositoryIT extends AbstractPostgresIntegrationTest {
 				40.0,
 				50.0,
 				60.0,
-				15.0
+				15.0,
+				ProductCategory.STANDARD,
+				FragilityLevel.STANDARD
 		);
 
 		// when

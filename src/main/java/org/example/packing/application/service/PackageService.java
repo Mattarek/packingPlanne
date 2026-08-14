@@ -3,6 +3,10 @@ package org.example.packing.application.service;
 import org.example.packing.application.dto.PackageRequest;
 import org.example.packing.application.dto.PackageResponse;
 import org.example.packing.domain.exception.PackageNotFoundException;
+import org.example.packing.domain.model.Dimensions;
+import org.example.packing.domain.model.Weight;
+import org.example.packing.domain.policy.PackageAcceptancePolicy;
+import org.example.packing.infrastructure.kafka.producer.PackageCreatedEventPublisher;
 import org.example.packing.infrastructure.persistence.entity.PackageEntity;
 import org.example.packing.infrastructure.persistence.mapper.PackagePersistenceMapper;
 import org.example.packing.infrastructure.persistence.repository.PackageRepository;
@@ -21,21 +25,45 @@ public class PackageService {
 
 	private final PackageRepository packageRepository;
 	private final PackagePersistenceMapper packageMapper;
+	private final PackageCreatedEventPublisher packageCreatedEventPublisher;
 
 	public PackageService(
 			final PackageRepository packageRepository,
-			final PackagePersistenceMapper packageMapper
+			final PackagePersistenceMapper packageMapper,
+			final PackageCreatedEventPublisher packageCreatedEventPublisher
 	) {
 		this.packageRepository = packageRepository;
 		this.packageMapper = packageMapper;
+		this.packageCreatedEventPublisher = packageCreatedEventPublisher;
 	}
 
 	@Transactional
 	public List<PackageResponse> createPackages(final List<PackageRequest> packages) {
+		packages.forEach(this::validateAcceptance);
+
 		final List<PackageEntity> entities = packageMapper.toEntityList(packages);
 		final List<PackageEntity> savedEntities = packageRepository.saveAll(entities);
+		final List<PackageResponse> responses = packageMapper.toResponseList(savedEntities);
 
-		return packageMapper.toResponseList(savedEntities);
+		// Same transaction as the insert above — transactional outbox pattern:
+		// the "package created" event either commits with the packages or not at all.
+		packageCreatedEventPublisher.publish(responses);
+
+		return responses;
+	}
+
+	/**
+	 * Enforces company-wide acceptance rules (max size/weight, transportable
+	 * product categories, no ultra-fragile items) before a package is ever
+	 * persisted. See {@link PackageAcceptancePolicy}.
+	 */
+	private void validateAcceptance(final PackageRequest request) {
+		PackageAcceptancePolicy.validate(
+				new Dimensions(request.length(), request.width(), request.height()),
+				new Weight(request.weight()),
+				request.category(),
+				request.fragility()
+		);
 	}
 
 	@Transactional(readOnly = true)

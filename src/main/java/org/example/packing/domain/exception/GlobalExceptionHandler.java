@@ -24,6 +24,33 @@ public class GlobalExceptionHandler {
 				.body(ApiResponse.failure(exception.getMessage()));
 	}
 
+	@ExceptionHandler(PackageNotFoundException.class)
+	public ResponseEntity<ApiResponse<Void>> handlePackageNotFoundException(
+			final PackageNotFoundException exception
+	) {
+		return ResponseEntity
+				.status(HttpStatus.NOT_FOUND)
+				.body(ApiResponse.failure(exception.getMessage()));
+	}
+
+	@ExceptionHandler(PackageNotAcceptedException.class)
+	public ResponseEntity<ApiResponse<Void>> handlePackageNotAcceptedException(
+			final PackageNotAcceptedException exception
+	) {
+		return ResponseEntity
+				.status(HttpStatus.UNPROCESSABLE_ENTITY)
+				.body(ApiResponse.failure(exception.getMessage()));
+	}
+
+	@ExceptionHandler(PackageTooLargeException.class)
+	public ResponseEntity<ApiResponse<Void>> handlePackageTooLargeException(
+			final PackageTooLargeException exception
+	) {
+		return ResponseEntity
+				.status(HttpStatus.UNPROCESSABLE_ENTITY)
+				.body(ApiResponse.failure(exception.getMessage()));
+	}
+
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(
 			final MethodArgumentNotValidException exception
