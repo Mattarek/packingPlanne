@@ -42,14 +42,6 @@ public class VehicleService {
 		return vehicleMapper.toResponseList(savedEntities);
 	}
 
-	/**
-	 * Builds the domain value objects for a requested vehicle's cargo area and
-	 * payload, so their invariants (positive finite dimensions, non-negative
-	 * weight) are enforced the same way as for packages — see
-	 * {@link PackageService}. Bean Validation on {@link VehicleRequest} already
-	 * rejects non-positive values; this additionally catches cases it can't,
-	 * such as infinite values.
-	 */
 	private void validateInvariants(final VehicleRequest request) {
 		new Dimensions(request.length(), request.width(), request.height());
 		new Weight(request.maxPayload());

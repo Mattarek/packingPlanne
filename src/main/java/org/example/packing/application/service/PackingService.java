@@ -10,19 +10,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Application service orchestrating the packing operation.
- * <p>
- * Responsibilities:
- * <ul>
- *   <li>Pre-validate that no single package is impossible to pack</li>
- *   <li>Delegate the actual packing to the configured {@link PackingStrategy}</li>
- *   <li>Measure elapsed time and produce a {@link PackingReport}</li>
- * </ul>
- * <p>
- * The strategy is injected — clients can swap algorithms without changing this class
- * (Open/Closed Principle, Dependency Inversion).
- */
 @Service
 public final class PackingService {
 
@@ -32,11 +19,6 @@ public final class PackingService {
 		this.strategy = Objects.requireNonNull(strategy, "strategy must not be null");
 	}
 
-	/**
-	 * Validates and packs the given packages into the given vehicles.
-	 *
-	 * @throws PackageTooLargeException if any package is too large/heavy for every vehicle
-	 */
 	public PackingReport pack(final List<Package> packages, final List<Vehicle> vehicles) {
 		Objects.requireNonNull(packages, "packages must not be null");
 		Objects.requireNonNull(vehicles, "vehicles must not be null");
@@ -60,11 +42,6 @@ public final class PackingService {
 		);
 	}
 
-	/**
-	 * Verifies upfront that every package can theoretically fit in at least one vehicle.
-	 * This catches client errors early rather than having packages silently end up
-	 * in the unpacked list.
-	 */
 	private void validateFeasibility(final List<Package> packages, final List<Vehicle> vehicles) {
 		for (final Package pkg : packages) {
 			final Vehicle anyFit = vehicles.stream()

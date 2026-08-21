@@ -7,11 +7,6 @@ import org.example.packing.domain.model.PlacedPackage;
 
 import java.util.Objects;
 
-/**
- * Renders a {@link PackingReport} as human-readable text.
- * Separated from the service to honour the Single Responsibility Principle —
- * formatting is a presentation concern.
- */
 public final class ReportPrinter {
 
 	private static final String SEPARATOR = "─".repeat(70);

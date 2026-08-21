@@ -9,37 +9,15 @@ import org.example.packing.domain.model.Weight;
 import java.util.Arrays;
 import java.util.Objects;
 
-/**
- * Company-wide rules applied to every package at intake, independent of which
- * vehicle (if any) it will eventually be loaded onto.
- * <p>
- * We do not accept packages that:
- * <ul>
- *   <li>exceed {@link #MAX_ACCEPTED_DIMENSIONS} in any orientation,</li>
- *   <li>exceed {@link #MAX_ACCEPTED_WEIGHT},</li>
- *   <li>belong to a {@link ProductCategory} we don't transport, or</li>
- *   <li>are {@link FragilityLevel#ULTRA_FRAGILE}.</li>
- * </ul>
- * A package failing any of these checks is rejected before it is ever
- * persisted — see {@link org.example.packing.application.service.PackageService}.
- * This is a separate concern from
- * {@link org.example.packing.domain.exception.PackageTooLargeException}, which
- * checks fit against a specific vehicle during packing.
- */
 public final class PackageAcceptancePolicy {
 
-	/** Largest dimensions we accept, checked orientation-independently (centimeters). */
 	public static final Dimensions MAX_ACCEPTED_DIMENSIONS = new Dimensions(120.0, 80.0, 80.0);
 
-	/** Heaviest package we accept (kilograms). */
 	public static final Weight MAX_ACCEPTED_WEIGHT = new Weight(30.0);
 
 	private PackageAcceptancePolicy() {
 	}
 
-	/**
-	 * @throws PackageNotAcceptedException if the package violates any acceptance rule
-	 */
 	public static void validate(
 			final Dimensions dimensions,
 			final Weight weight,
@@ -73,12 +51,6 @@ public final class PackageAcceptancePolicy {
 		}
 	}
 
-	/**
-	 * Compares the package's dimensions against {@link #MAX_ACCEPTED_DIMENSIONS}
-	 * sorted ascending on both sides, so a package can be rotated freely to fit
-	 * within the accepted envelope (unlike {@link Dimensions#fitsInside}, which
-	 * is axis-aligned and used for fitting a specific vehicle's cargo area).
-	 */
 	private static boolean fitsWithinMaxDimensions(final Dimensions dimensions) {
 		final double[] actual = sortedAscending(dimensions);
 		final double[] max = sortedAscending(MAX_ACCEPTED_DIMENSIONS);

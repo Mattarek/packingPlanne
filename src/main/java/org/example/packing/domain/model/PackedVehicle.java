@@ -5,19 +5,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Aggregate root representing a vehicle being loaded with packages.
- * <p>
- * Enforces invariants:
- * <ul>
- *   <li>Total weight of placed packages never exceeds {@code vehicle.maxPayload()}</li>
- *   <li>No package extends beyond the cargo area boundaries</li>
- *   <li>No two placed packages overlap in 3D space</li>
- * </ul>
- * <p>
- * This class is mutable but always consistent — every successful {@link #place} call
- * leaves the aggregate in a valid state.
- */
 public final class PackedVehicle {
 
 	private final Vehicle vehicle;
@@ -56,26 +43,16 @@ public final class PackedVehicle {
 				.sum();
 	}
 
-	/**
-	 * Volume utilization ratio in range [0.0, 1.0].
-	 */
 	public double volumeUtilization() {
 		final double cargo = vehicle.cargoVolume();
 		return cargo == 0 ? 0.0 : currentVolume() / cargo;
 	}
 
-	/**
-	 * Weight utilization ratio in range [0.0, 1.0].
-	 */
 	public double weightUtilization() {
 		final double max = vehicle.maxPayload().kilograms();
 		return max == 0 ? 0.0 : currentWeight.kilograms() / max;
 	}
 
-	/**
-	 * Tests whether the given package can be placed at the given position
-	 * without violating any invariant. Pure query — does not mutate state.
-	 */
 	public boolean canPlace(final Package pkg, final Position position) {
 		Objects.requireNonNull(pkg, "pkg must not be null");
 		Objects.requireNonNull(position, "position must not be null");
@@ -98,11 +75,6 @@ public final class PackedVehicle {
 		return true;
 	}
 
-	/**
-	 * Places a package at the given position.
-	 *
-	 * @throws IllegalStateException if placement would violate any invariant
-	 */
 	public void place(final Package pkg, final Position position) {
 		if (!canPlace(pkg, position)) {
 			throw new IllegalStateException(

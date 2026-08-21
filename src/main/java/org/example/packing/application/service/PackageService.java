@@ -45,18 +45,11 @@ public class PackageService {
 		final List<PackageEntity> savedEntities = packageRepository.saveAll(entities);
 		final List<PackageResponse> responses = packageMapper.toResponseList(savedEntities);
 
-		// Same transaction as the insert above — transactional outbox pattern:
-		// the "package created" event either commits with the packages or not at all.
 		packageCreatedEventPublisher.publish(responses);
 
 		return responses;
 	}
 
-	/**
-	 * Enforces company-wide acceptance rules (max size/weight, transportable
-	 * product categories, no ultra-fragile items) before a package is ever
-	 * persisted. See {@link PackageAcceptancePolicy}.
-	 */
 	private void validateAcceptance(final PackageRequest request) {
 		PackageAcceptancePolicy.validate(
 				new Dimensions(request.length(), request.width(), request.height()),

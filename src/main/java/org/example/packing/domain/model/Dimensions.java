@@ -3,16 +3,6 @@ package org.example.packing.domain.model;
 import java.util.Locale;
 import java.util.Objects;
 
-/**
- * Immutable value object representing 3D dimensions in centimeters.
- * <p>
- * Invariants:
- * <ul>
- *   <li>All dimensions must be positive</li>
- *   <li>Object is immutable — safe for concurrent use</li>
- * </ul>
- */
-
 public record Dimensions(double length, double width, double height) {
 
 	public Dimensions {
@@ -33,10 +23,6 @@ public record Dimensions(double length, double width, double height) {
 		return length * width * height;
 	}
 
-	/**
-	 * Checks whether a box of these dimensions fits inside the given outer dimensions
-	 * without rotation.
-	 */
 	public boolean fitsInside(final Dimensions outer) {
 		Objects.requireNonNull(outer, "outer dimensions must not be null");
 		return length <= outer.length

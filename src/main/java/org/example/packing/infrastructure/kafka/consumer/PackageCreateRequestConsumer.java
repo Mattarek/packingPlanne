@@ -32,22 +32,6 @@ public class PackageCreateRequestConsumer extends AbstractKafkaConsumer<PackageC
 		this.processor = processor;
 	}
 
-	/*
-	 * Non-blocking retry: błędy niesklasyfikowane jako NonRetryable
-	 * (czyli domyślnie wszystko poza NonRetryableKafkaProcessingException,
-	 * w tym RetryableKafkaProcessingException) są ponawiane przez
-	 * republikację na osobne topiki retry, zamiast blokować partycję
-	 * głównego topicu.
-	 *
-	 * attempts=${app.kafka.retry.attempts:3}: pierwsza próba + N-1 ponowień
-	 * (retry-0, retry-1, ...), co ${app.kafka.retry.backoff-ms:5000}ms,
-	 * po wyczerpaniu -> package-create-requests.DLT.
-	 *
-	 * Republikacja na retry/DLT wysyła zdeserializowany
-	 * PackageCreateRequestEvent (nie surowe bajty), więc app-owy
-	 * KafkaTemplate musi umieć zserializować i String (payloady outboxa),
-	 * i ten obiekt — patrz KafkaRetryTemplateConfiguration.
-	 */
 	@RetryableTopic(
 			attempts = "${app.kafka.retry.attempts:3}",
 			backOff = @BackOff(delayString = "${app.kafka.retry.backoff-ms:5000}"),
@@ -69,14 +53,6 @@ public class PackageCreateRequestConsumer extends AbstractKafkaConsumer<PackageC
 		processor.process(event);
 	}
 
-	/*
-	 * Explicit DLT handler instead of relying on @RetryableTopic's implicit
-	 * default (a framework-provided no-op logging listener) — once records
-	 * actually reach the DLT (see the comment on @RetryableTopic above), the
-	 * implicit default has proven unreliable in this Spring Boot/Kafka
-	 * version combination. Declaring our own keeps behavior predictable and
-	 * gives us an actual log line to look for in production.
-	 */
 	@DltHandler
 	public void handleDlt(
 			final PackageCreateRequestEvent event,

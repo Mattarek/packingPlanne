@@ -2,9 +2,6 @@ package org.example.packing.domain.model;
 
 import java.util.Objects;
 
-/**
- * Immutable value object representing weight in kilograms.
- */
 public record Weight(double kilograms) implements Comparable<Weight> {
 
 	public static final Weight ZERO = new Weight(0.0);

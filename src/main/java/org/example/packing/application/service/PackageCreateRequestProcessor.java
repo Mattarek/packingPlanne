@@ -164,6 +164,4 @@ public class PackageCreateRequestProcessor {
 			);
 		}
 	}
-
-	//@TODO jak generycznie stworzyc producera
 }

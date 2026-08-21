@@ -1,12 +1,5 @@
 package org.example.packing.domain.model;
 
-/**
- * Classifies a package by the kind of product it contains.
- * <p>
- * {@link #isTransportable()} encodes company policy on which categories we
- * are willing to carry at all — see
- * {@link org.example.packing.domain.policy.PackageAcceptancePolicy}.
- */
 public enum ProductCategory {
 
 	STANDARD(true),

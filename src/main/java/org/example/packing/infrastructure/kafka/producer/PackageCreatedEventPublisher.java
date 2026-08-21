@@ -12,16 +12,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Publishes a {@link PackageCreatedEvent} whenever one or more packages are
- * successfully created — see {@link AbstractKafkaEventPublisher} for the
- * shared outbox-writing mechanics.
- * <p>
- * Deliberately <strong>not</strong> gated by {@code app.kafka.enabled}: it
- * only ever writes to the {@code outbox_events} table, never talks to Kafka
- * directly, so it stays safe to call even when Kafka/the relay are disabled
- * — the row simply sits as {@code NEW} until a relay picks it up.
- */
 @Component
 public class PackageCreatedEventPublisher extends AbstractKafkaEventPublisher<List<PackageResponse>> {
 
@@ -53,12 +43,6 @@ public class PackageCreatedEventPublisher extends AbstractKafkaEventPublisher<Li
 	) {
 		return new PackageCreatedEvent(eventId, EVENT_TYPE, VERSION, occurredAt, toItems(payload));
 	}
-
-	// aggregateId intentionally not overridden: a batch can contain any
-	// number of packages, so there's no single natural key, and joining all
-	// their ids would overflow outbox_events.aggregate_id (VARCHAR(100)) —
-	// see AbstractKafkaEventPublisher's default. Every package's id is
-	// already in the JSON payload itself if needed.
 
 	@Override
 	protected String eventType() {
