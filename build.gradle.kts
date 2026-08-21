@@ -1,5 +1,6 @@
 plugins {
 	java
+	idea
 	id("org.springframework.boot") version "4.0.6"
 	id("io.spring.dependency-management") version "1.1.7"
 }
@@ -55,6 +56,14 @@ val integrationTestSourceSet = sourceSets.create("integrationTest") {
 
 	compileClasspath += sourceSets["main"].output + configurations["testCompileClasspath"]
 	runtimeClasspath += output + compileClasspath + configurations["testRuntimeClasspath"]
+}
+idea {
+	module {
+		testSources.from(
+			integrationTestSourceSet.java.srcDirs,
+			integrationTestSourceSet.resources.srcDirs
+		)
+	}
 }
 
 configurations[integrationTestSourceSet.implementationConfigurationName]
