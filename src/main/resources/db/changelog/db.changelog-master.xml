@@ -13,4 +13,5 @@
     <include file="/db/changelog/changes/004-create-inbox-events.xml"/>
     <include file="/db/changelog/changes/005-create-outbox-events.xml"/>
     <include file="/db/changelog/changes/006-add-category-and-fragility-to-packages.xml"/>
+    <include file="/db/changelog/changes/007-create-dead-letter-events.xml"/>
 </databaseChangeLog>

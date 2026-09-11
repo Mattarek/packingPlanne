@@ -15,3 +15,10 @@ public abstract class AbstractKafkaConsumer<T> {
 
 	protected abstract void process(T event);
 }
+
+// 1.
+// Partycje logiczne w postgresie
+
+// 2. Na co zwrócić uwage, SOLID, wzorce projektowe, Coupling, Cohesion
+// Coupling - co to zla/dobra
+// Cohesion - co to zla/dobra

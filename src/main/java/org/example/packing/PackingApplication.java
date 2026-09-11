@@ -4,6 +4,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.kafka.annotation.EnableKafka;
 
+// Poprzednie punkty do zrobienia zostaly rozwiazane:
+// - bezpieczenstwo mapowania -> PackingMapperConfig (unmappedTargetPolicy = ERROR)
+// - stan bledu + powod -> DeadLetterEventEntity / DeadLetterEventStatus
+// - odblokowanie konsumowania partycji -> application.yml spring.kafka.listener.concurrency
+// - retry bledow -> DeadLetterRetryScheduler
+
 @EnableKafka
 @SpringBootApplication
 public class PackingApplication {
@@ -69,3 +75,9 @@ public class PackingApplication {
 //}
 
 // 3. Jak stworzyc bean w Configuration i czy moga byc publiczne czy nie.
+
+// 4. waiting lock - liquibase, sprawdzic tabele z lockami w bazie danych
+//
+//
+//
+//

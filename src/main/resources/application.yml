@@ -32,6 +32,11 @@ spring:
 
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
 
+      # Bounds how many records one poll() hands the listener at once, so a
+      # burst of messages can't turn into a single very long-running batch
+      # that risks tripping max.poll.interval.ms and triggering a rebalance.
+      max-poll-records: 50
+
       properties:
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
 
@@ -40,6 +45,14 @@ spring:
         spring.json.use.type.headers: false
 
         spring.json.trusted.packages: org.example.packing.infrastructure.kafka.event
+
+    listener:
+      # One consumer thread per partition (app.kafka.topics.partitions below),
+      # so a slow/backed-up partition no longer holds up the other two: with
+      # concurrency 1 (the default), a single thread serialized all
+      # partitions, so a stuck record on partition 0 delayed 1 and 2 too even
+      # though nothing about them depended on it.
+      concurrency: 3
 
     producer:
       client-id: packing-producer
@@ -65,6 +78,14 @@ app:
       # OutboxEventRelay
       relay-interval-ms: 5000
       batch-size: 100
+      max-attempts: 5
+
+    dead-letter:
+      # DeadLetterRetryScheduler: resubmits events parked on a .DLT topic
+      # (see PackageCreateRequestConsumer#handleDlt) back onto their original
+      # topic, so a transient/now-fixed problem doesn't need a human to replay it.
+      retry-interval-ms: 60000
+      batch-size: 50
       max-attempts: 5
 
     topics:

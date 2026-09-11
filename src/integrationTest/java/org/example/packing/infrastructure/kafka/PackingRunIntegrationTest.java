@@ -11,12 +11,11 @@ import org.example.packing.infrastructure.kafka.support.KafkaPostgresContainersI
 import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
 import org.example.packing.infrastructure.persistence.repository.PackageRepository;
 import org.example.packing.infrastructure.persistence.repository.VehicleRepository;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -83,7 +82,7 @@ class PackingRunIntegrationTest {
 		vehicleRepository.deleteAll();
 	}
 
-	@AfterEach
+	@BeforeEach
 	void cleanUpPackagesAndVehicles() {
 		packageRepository.deleteAll();
 		vehicleRepository.deleteAll();
@@ -111,8 +110,7 @@ class PackingRunIntegrationTest {
 				.getResponse()
 				.getContentAsString();
 
-		@SuppressWarnings("unchecked")
-		final Map<String, Object> response = objectMapper.readValue(responseJson, Map.class);
+		@SuppressWarnings("unchecked") final Map<String, Object> response = objectMapper.readValue(responseJson, Map.class);
 
 		// then: wszystkie 40 paczek zostały przydzielone, na więcej niż jeden pojazd
 		assertThat(intValue(response, "totalPackagesIn")).isEqualTo(PACKAGE_COUNT);

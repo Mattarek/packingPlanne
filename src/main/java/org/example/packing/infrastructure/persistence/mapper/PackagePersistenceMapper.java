@@ -11,7 +11,7 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(config = PackingMapperConfig.class)
 public interface PackagePersistenceMapper {
 	@Mapping(target = "dimensions", source = "entity")
 	@Mapping(target = "weight", source = "weight")

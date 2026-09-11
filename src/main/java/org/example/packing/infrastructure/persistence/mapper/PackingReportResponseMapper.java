@@ -16,7 +16,7 @@ import org.example.packing.domain.model.Weight;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(config = PackingMapperConfig.class)
 public interface PackingReportResponseMapper {
 
 	@Mapping(target = "packedVehicles", source = "packedVehicles")
