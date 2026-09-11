@@ -1,0 +1,100 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:app_db}
+    username: ${DB_USER:app_user}
+    password: ${DB_PASSWORD:app_password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+    show-sql: true
+
+    open-in-view: false
+
+    properties:
+      hibernate:
+        format_sql: true
+
+  liquibase:
+    enabled: true
+    change-log: classpath:/db/changelog/db.changelog-master.xml
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+
+    consumer:
+      group-id: packing-group
+      auto-offset-reset: earliest
+
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+
+      # Bounds how many records one poll() hands the listener at once, so a
+      # burst of messages can't turn into a single very long-running batch
+      # that risks tripping max.poll.interval.ms and triggering a rebalance.
+      max-poll-records: 50
+
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+
+        spring.json.value.default.type: org.example.packing.infrastructure.kafka.event.PackageCreateRequestEvent
+
+        spring.json.use.type.headers: false
+
+        spring.json.trusted.packages: org.example.packing.infrastructure.kafka.event
+
+    listener:
+      # One consumer thread per partition (app.kafka.topics.partitions below),
+      # so a slow/backed-up partition no longer holds up the other two: with
+      # concurrency 1 (the default), a single thread serialized all
+      # partitions, so a stuck record on partition 0 delayed 1 and 2 too even
+      # though nothing about them depended on it.
+      concurrency: 3
+
+    producer:
+      client-id: packing-producer
+      # No key/value serializer here on purpose: the app's KafkaTemplate is
+      # built by hand in KafkaRetryTemplateConfiguration with explicit
+      # Serializer instances (a DelegatingByTypeSerializer, since one
+      # template has to handle both pre-serialized outbox strings and
+      # deserialized listener objects). A serializer *class name* property
+      # can't express that per-type routing, and would silently be ignored
+      # if set here — so it's deliberately left out rather than left dead.
+
+
+app:
+  kafka:
+    enabled: true
+
+    retry:
+      # @RetryableTopic on PackageCreateRequestConsumer
+      attempts: 3
+      backoff-ms: 5000
+
+    outbox:
+      # OutboxEventRelay
+      relay-interval-ms: 5000
+      batch-size: 100
+      max-attempts: 5
+
+    dead-letter:
+      # DeadLetterRetryScheduler: resubmits events parked on a .DLT topic
+      # (see PackageCreateRequestConsumer#handleDlt) back onto their original
+      # topic, so a transient/now-fixed problem doesn't need a human to replay it.
+      retry-interval-ms: 60000
+      batch-size: 50
+      max-attempts: 5
+
+    topics:
+      partitions: 3
+
+      package-create-requests: package-create-requests
+
+      package-created-events: package-created-events
+
+
+server:
+  port: 8080

@@ -7,11 +7,6 @@ import org.example.packing.domain.model.PlacedPackage;
 
 import java.util.Objects;
 
-/**
- * Renders a {@link PackingReport} as human-readable text.
- * Separated from the service to honour the Single Responsibility Principle —
- * formatting is a presentation concern.
- */
 public final class ReportPrinter {
 
 	private static final String SEPARATOR = "─".repeat(70);
@@ -31,11 +26,11 @@ public final class ReportPrinter {
 		sb.append("PACKING REPORT — strategy: ").append(r.strategyName()).append('\n');
 		sb.append(SEPARATOR).append('\n');
 		sb.append("Input packages:    ").append(r.totalPackagesIn()).append('\n');
-		sb.append("Packed:            ").append(r.packedPackagesCount()).append('\n');
+		sb.append("Packed:            ").append(r.getPackedPackagesCount()).append('\n');
 		sb.append("Unpacked:          ").append(r.unpackedPackages().size()).append('\n');
-		sb.append("Vehicles used:     ").append(r.vehiclesUsed()).append('\n');
-		sb.append("Avg vol. usage:    %.1f%%%n".formatted(r.averageVolumeUtilization() * 100));
-		sb.append("Avg weight usage:  %.1f%%%n".formatted(r.averageWeightUtilization() * 100));
+		sb.append("Vehicles used:     ").append(r.getVehiclesUsed()).append('\n');
+		sb.append("Avg vol. usage:    %.1f%%%n".formatted(r.getAverageVolumeUtilization() * 100));
+		sb.append("Avg weight usage:  %.1f%%%n".formatted(r.getAverageWeightUtilization() * 100));
 		sb.append("Elapsed:           ").append(r.elapsedMillis()).append(" ms\n");
 		sb.append(SEPARATOR).append('\n');
 	}

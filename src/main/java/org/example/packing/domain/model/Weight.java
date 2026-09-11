@@ -2,9 +2,6 @@ package org.example.packing.domain.model;
 
 import java.util.Objects;
 
-/**
- * Immutable value object representing weight in kilograms.
- */
 public record Weight(double kilograms) implements Comparable<Weight> {
 
 	public static final Weight ZERO = new Weight(0.0);
@@ -36,7 +33,7 @@ public record Weight(double kilograms) implements Comparable<Weight> {
 		if (this == o) {
 			return true;
 		}
-		if (!(o instanceof Weight(double kilograms1))) {
+		if (!(o instanceof Weight(final double kilograms1))) {
 			return false;
 		}
 		return Double.compare(kilograms, kilograms1) == 0;

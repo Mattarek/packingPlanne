@@ -3,28 +3,38 @@ package org.example.packing.domain.model;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Domain entity representing a package to be loaded.
- * <p>
- * Identity is established by {@code id}. Two packages with the same dimensions
- * and weight but different ids are different packages.
- */
-public record Package(String id, Dimensions dimensions, Weight weight) {
+public record Package(UUID id, Dimensions dimensions, Weight weight, ProductCategory category,
+                      FragilityLevel fragility) {
 
-	public Package(final String id, final Dimensions dimensions, final Weight weight) {
+	public Package(
+			final UUID id,
+			final Dimensions dimensions,
+			final Weight weight,
+			final ProductCategory category,
+			final FragilityLevel fragility
+	) {
 		this.id = Objects.requireNonNull(id, "id must not be null");
 		this.dimensions = Objects.requireNonNull(dimensions, "dimensions must not be null");
 		this.weight = Objects.requireNonNull(weight, "weight must not be null");
-		if (id.isBlank()) {
-			throw new IllegalArgumentException("id must not be blank");
-		}
+		this.category = Objects.requireNonNull(category, "category must not be null");
+		this.fragility = Objects.requireNonNull(fragility, "fragility must not be null");
 	}
 
-	/**
-	 * Convenience factory generating a random UUID.
-	 */
+	public Package(final UUID id, final Dimensions dimensions, final Weight weight) {
+		this(id, dimensions, weight, ProductCategory.STANDARD, FragilityLevel.STANDARD);
+	}
+
 	public static Package of(final Dimensions dimensions, final Weight weight) {
-		return new Package(UUID.randomUUID().toString(), dimensions, weight);
+		return new Package(UUID.randomUUID(), dimensions, weight);
+	}
+
+	public static Package of(
+			final Dimensions dimensions,
+			final Weight weight,
+			final ProductCategory category,
+			final FragilityLevel fragility
+	) {
+		return new Package(UUID.randomUUID(), dimensions, weight, category, fragility);
 	}
 
 	public double volume() {

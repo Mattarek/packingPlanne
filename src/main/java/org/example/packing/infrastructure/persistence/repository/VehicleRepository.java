@@ -1,7 +1,11 @@
 package org.example.packing.infrastructure.persistence.repository;
 
-import org.example.packing.infrastructure.persistence.entity.VehicleEntity;
+import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface VehicleRepository extends JpaRepository<VehicleEntity, String> {
+import java.util.UUID;
+
+@Repository
+public interface VehicleRepository extends JpaRepository<VehiclesEntity, UUID> {
 }

@@ -2,6 +2,10 @@ package org.example.packing.infrastructure.persistence.repository;
 
 import org.example.packing.infrastructure.persistence.entity.PackageEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface PackageRepository extends JpaRepository<PackageEntity, String> {
+import java.util.UUID;
+
+@Repository
+public interface PackageRepository extends JpaRepository<PackageEntity, UUID> {
 }

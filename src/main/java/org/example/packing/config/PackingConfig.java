@@ -13,7 +13,7 @@ public class PackingConfig {
 
 	@Bean
 	public PackingStrategy packingStrategy() {
-		return new ExtremePointPackingStrategy(PackageOrdering.VOLUME_DESC);
+		return new ExtremePointPackingStrategy(PackageOrdering.BASE_AREA_DESC);
 	}
 
 	@Bean

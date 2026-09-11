@@ -1,9 +1,5 @@
 package org.example.packing.domain.model;
 
-/**
- * Immutable value object representing a 3D position (origin = bottom-front-left corner of vehicle).
- * Coordinates are in centimeters.
- */
 public record Position(double x, double y, double z) {
 
 	public static final Position ORIGIN = new Position(0, 0, 0);

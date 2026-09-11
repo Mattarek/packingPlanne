@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
+ * Suitable for logging, UI presentation, or API responses.
  * Read-only report describing the outcome of a packing operation.
  * Suitable for logging, UI presentation, or API responses.
  */
@@ -15,7 +16,8 @@ public record PackingReport(
 		List<PackedVehicle> packedVehicles,
 		List<Package> unpackedPackages,
 		int totalPackagesIn,
-		long elapsedMillis) {
+		long elapsedMillis
+) {
 
 	public PackingReport {
 		Objects.requireNonNull(strategyName, "strategyName must not be null");
@@ -23,13 +25,13 @@ public record PackingReport(
 		unpackedPackages = List.copyOf(unpackedPackages);
 	}
 
-	public int packedPackagesCount() {
+	public int getPackedPackagesCount() {
 		return packedVehicles.stream()
 				.mapToInt(v -> v.placedPackages().size())
 				.sum();
 	}
 
-	public int vehiclesUsed() {
+	public int getVehiclesUsed() {
 		return (int) packedVehicles.stream()
 				.filter(v -> !v.placedPackages().isEmpty())
 				.count();
@@ -39,7 +41,7 @@ public record PackingReport(
 		return unpackedPackages.isEmpty();
 	}
 
-	public double averageVolumeUtilization() {
+	public double getAverageVolumeUtilization() {
 		return packedVehicles.stream()
 				.filter(v -> !v.placedPackages().isEmpty())
 				.mapToDouble(PackedVehicle::volumeUtilization)
@@ -47,7 +49,7 @@ public record PackingReport(
 				.orElse(0.0);
 	}
 
-	public double averageWeightUtilization() {
+	public double getAverageWeightUtilization() {
 		return packedVehicles.stream()
 				.filter(v -> !v.placedPackages().isEmpty())
 				.mapToDouble(PackedVehicle::weightUtilization)

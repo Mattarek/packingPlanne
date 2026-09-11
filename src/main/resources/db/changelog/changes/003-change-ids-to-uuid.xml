@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="
+            http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="003-change-package-and-vehicle-ids-to-uuid" author="marcin">
+        <modifyDataType
+                tableName="packages"
+                columnName="id"
+                newDataType="UUID"/>
+
+        <modifyDataType
+                tableName="vehicles"
+                columnName="id"
+                newDataType="UUID"/>
+    </changeSet>
+
+</databaseChangeLog>
