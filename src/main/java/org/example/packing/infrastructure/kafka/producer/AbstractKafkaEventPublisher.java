@@ -1,10 +1,12 @@
 package org.example.packing.infrastructure.kafka.producer;
 
+import org.example.packing.application.port.IdGenerator;
 import org.example.packing.infrastructure.persistence.entity.OutboxEventEntity;
 import org.example.packing.infrastructure.persistence.repository.OutboxEventRepository;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -12,13 +14,19 @@ public abstract class AbstractKafkaEventPublisher<T> {
 
 	private final OutboxEventRepository outboxEventRepository;
 	private final ObjectMapper objectMapper;
+	private final Clock clock;
+	private final IdGenerator idGenerator;
 
 	protected AbstractKafkaEventPublisher(
 			final OutboxEventRepository outboxEventRepository,
-			final ObjectMapper objectMapper
+			final ObjectMapper objectMapper,
+			final Clock clock,
+			final IdGenerator idGenerator
 	) {
 		this.outboxEventRepository = outboxEventRepository;
 		this.objectMapper = objectMapper;
+		this.clock = clock;
+		this.idGenerator = idGenerator;
 	}
 
 	public final void publish(final T payload) {
@@ -26,8 +34,8 @@ public abstract class AbstractKafkaEventPublisher<T> {
 			return;
 		}
 
-		final UUID eventId = UUID.randomUUID();
-		final Instant occurredAt = Instant.now();
+		final UUID eventId = idGenerator.newId();
+		final Instant occurredAt = clock.instant();
 		final Object envelope = buildEnvelope(eventId, occurredAt, payload);
 
 		final String serializedPayload;
@@ -41,7 +49,7 @@ public abstract class AbstractKafkaEventPublisher<T> {
 		}
 
 		outboxEventRepository.save(new OutboxEventEntity(
-				UUID.randomUUID(),
+				idGenerator.newId(),
 				eventId,
 				aggregateId(eventId, payload),
 				eventType(),

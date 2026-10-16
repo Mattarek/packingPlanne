@@ -4,10 +4,10 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.example.packing.application.dto.PackageRequest;
-import org.example.packing.application.dto.PackageResponse;
+import org.example.packing.application.command.CreatePackageCommand;
 import org.example.packing.application.service.PackageService;
 import org.example.packing.domain.model.FragilityLevel;
+import org.example.packing.domain.model.Package;
 import org.example.packing.domain.model.ProductCategory;
 import org.example.packing.infrastructure.kafka.support.KafkaContainerHandler;
 import org.example.packing.infrastructure.kafka.support.KafkaPostgresContainersInitializer;
@@ -54,13 +54,13 @@ class PackageCreatedEventIntegrationTest {
 	@Test
 	void shouldPublishPackageCreatedEventAfterCreatingPackages() {
 		// given
-		final PackageRequest request = new PackageRequest(
+		final CreatePackageCommand command = new CreatePackageCommand(
 				10.0, 20.0, 30.0, 5.5,
 				ProductCategory.STANDARD, FragilityLevel.STANDARD
 		);
 
 		// when
-		final List<PackageResponse> created = packageService.createPackages(List.of(request));
+		final List<Package> created = packageService.createPackages(List.of(command));
 		final UUID packageId = created.get(0).id();
 
 		// then: outbox row for this package eventually gets published

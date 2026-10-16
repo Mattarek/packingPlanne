@@ -1,15 +1,14 @@
 package org.example.packing.application.service;
 
-import org.example.packing.application.dto.PackageRequest;
-import org.example.packing.application.dto.PackageResponse;
+import org.example.packing.application.command.CreatePackageCommand;
+import org.example.packing.application.port.IdGenerator;
+import org.example.packing.application.port.PackageCreatedPublisher;
+import org.example.packing.application.port.PackageRepository;
 import org.example.packing.domain.exception.PackageNotFoundException;
 import org.example.packing.domain.model.Dimensions;
+import org.example.packing.domain.model.Package;
 import org.example.packing.domain.model.Weight;
 import org.example.packing.domain.policy.PackageAcceptancePolicy;
-import org.example.packing.infrastructure.kafka.producer.PackageCreatedEventPublisher;
-import org.example.packing.infrastructure.persistence.entity.PackageEntity;
-import org.example.packing.infrastructure.persistence.mapper.PackagePersistenceMapper;
-import org.example.packing.infrastructure.persistence.repository.PackageRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,57 +23,61 @@ import java.util.UUID;
 public class PackageService {
 
 	private final PackageRepository packageRepository;
-	private final PackagePersistenceMapper packageMapper;
-	private final PackageCreatedEventPublisher packageCreatedEventPublisher;
+	private final PackageAcceptancePolicy acceptancePolicy;
+	private final PackageCreatedPublisher packageCreatedPublisher;
+	private final IdGenerator idGenerator;
 
 	public PackageService(
 			final PackageRepository packageRepository,
-			final PackagePersistenceMapper packageMapper,
-			final PackageCreatedEventPublisher packageCreatedEventPublisher
+			final PackageAcceptancePolicy acceptancePolicy,
+			final PackageCreatedPublisher packageCreatedPublisher,
+			final IdGenerator idGenerator
 	) {
 		this.packageRepository = packageRepository;
-		this.packageMapper = packageMapper;
-		this.packageCreatedEventPublisher = packageCreatedEventPublisher;
+		this.acceptancePolicy = acceptancePolicy;
+		this.packageCreatedPublisher = packageCreatedPublisher;
+		this.idGenerator = idGenerator;
 	}
 
 	@Transactional
-	public List<PackageResponse> createPackages(final List<PackageRequest> packages) {
-		packages.forEach(this::validateAcceptance);
+	public List<Package> createPackages(final List<CreatePackageCommand> commands) {
+		final List<Package> packages = commands.stream()
+				.map(this::toPackage)
+				.toList();
 
-		final List<PackageEntity> entities = packageMapper.toEntityList(packages);
-		final List<PackageEntity> savedEntities = packageRepository.saveAll(entities);
-		final List<PackageResponse> responses = packageMapper.toResponseList(savedEntities);
+		packages.forEach(acceptancePolicy::validate);
 
-		packageCreatedEventPublisher.publish(responses);
+		final List<Package> saved = packageRepository.saveAll(packages);
 
-		return responses;
+		packageCreatedPublisher.publish(saved);
+
+		return saved;
 	}
 
-	private void validateAcceptance(final PackageRequest request) {
-		PackageAcceptancePolicy.validate(
-				new Dimensions(request.length(), request.width(), request.height()),
-				new Weight(request.weight()),
-				request.category(),
-				request.fragility()
+	private Package toPackage(final CreatePackageCommand command) {
+		return new Package(
+				idGenerator.newId(),
+				new Dimensions(command.length(), command.width(), command.height()),
+				new Weight(command.weight()),
+				command.category(),
+				command.fragility()
 		);
 	}
 
 	@Transactional(readOnly = true)
-	public Page<PackageResponse> getPackages(final int page, final int size) {
+	public Page<Package> getPackages(final int page, final int size) {
 		final Pageable pageable = PageRequest.of(
 				page,
 				size,
 				Sort.by("id").ascending()
 		);
 
-		return packageRepository.findAll(pageable)
-				.map(packageMapper::toResponse);
+		return packageRepository.findAll(pageable);
 	}
 
 	@Transactional(readOnly = true)
-	public PackageResponse getPackage(final UUID id) {
+	public Package getPackage(final UUID id) {
 		return packageRepository.findById(id)
-				.map(packageMapper::toResponse)
 				.orElseThrow(() -> new PackageNotFoundException(id));
 	}
 

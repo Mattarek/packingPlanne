@@ -2,15 +2,13 @@ package org.example.packing.infrastructure.kafka;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.example.packing.domain.model.FragilityLevel;
-import org.example.packing.domain.model.ProductCategory;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestEvent;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestItem;
 import org.example.packing.infrastructure.kafka.support.KafkaContainerHandler;
 import org.example.packing.infrastructure.kafka.support.KafkaPostgresContainersInitializer;
 import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
-import org.example.packing.infrastructure.persistence.repository.PackageRepository;
-import org.example.packing.infrastructure.persistence.repository.VehicleRepository;
+import org.example.packing.infrastructure.persistence.repository.PackageJpaRepository;
+import org.example.packing.infrastructure.persistence.repository.VehicleJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,10 +69,10 @@ class PackingRunIntegrationTest {
 	private ObjectMapper objectMapper;
 
 	@Autowired
-	private PackageRepository packageRepository;
+	private PackageJpaRepository packageRepository;
 
 	@Autowired
-	private VehicleRepository vehicleRepository;
+	private VehicleJpaRepository vehicleRepository;
 
 	@BeforeEach
 	void resetPackagesAndVehicles() {
@@ -126,14 +124,14 @@ class PackingRunIntegrationTest {
 
 	private VehiclesEntity vehicle(final String name) {
 		return new VehiclesEntity(
-				null, name, VEHICLE_CARGO_LENGTH, VEHICLE_CARGO_WIDTH, VEHICLE_CARGO_HEIGHT, VEHICLE_MAX_PAYLOAD
+				UUID.randomUUID(), name, VEHICLE_CARGO_LENGTH, VEHICLE_CARGO_WIDTH, VEHICLE_CARGO_HEIGHT, VEHICLE_MAX_PAYLOAD
 		);
 	}
 
 	private void sendPackageCreateRequestEvent(final int packageCount) {
 		final List<PackageCreateRequestItem> items = IntStream.range(0, packageCount)
 				.mapToObj(i -> new PackageCreateRequestItem(
-						20.0, 20.0, 20.0, 3.0, ProductCategory.STANDARD, FragilityLevel.STANDARD
+						20.0, 20.0, 20.0, 3.0, "STANDARD", "STANDARD"
 				))
 				.toList();
 

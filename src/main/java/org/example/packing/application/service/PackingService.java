@@ -4,6 +4,7 @@ import org.example.packing.application.dto.PackingReport;
 import org.example.packing.application.strategy.PackingStrategy;
 import org.example.packing.domain.exception.PackageTooLargeException;
 import org.example.packing.domain.model.Package;
+import org.example.packing.domain.model.PackingStatistics;
 import org.example.packing.domain.model.Vehicle;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +39,8 @@ public final class PackingService {
 				result.packedVehicles(),
 				result.unpackedPackages(),
 				packages.size(),
-				elapsedMillis
+				elapsedMillis,
+				PackingStatistics.of(result.packedVehicles(), result.unpackedPackages())
 		);
 	}
 

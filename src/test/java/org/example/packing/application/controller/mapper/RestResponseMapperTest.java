@@ -1,13 +1,16 @@
-package org.example.packing.infrastructure.persistence.mapper;
+package org.example.packing.application.controller.mapper;
 
 import org.example.packing.application.dto.PackageResponse;
 import org.example.packing.application.dto.PackedVehicleResponse;
+import org.example.packing.application.dto.PackingReport;
+import org.example.packing.application.dto.PackingRunResponse;
 import org.example.packing.application.dto.PlacedPackageResponse;
 import org.example.packing.application.dto.PositionResponse;
 import org.example.packing.application.dto.VehicleResponse;
 import org.example.packing.domain.model.Dimensions;
 import org.example.packing.domain.model.Package;
 import org.example.packing.domain.model.PackedVehicle;
+import org.example.packing.domain.model.PackingStatistics;
 import org.example.packing.domain.model.PlacedPackage;
 import org.example.packing.domain.model.Position;
 import org.example.packing.domain.model.Vehicle;
@@ -16,13 +19,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class PackingReportResponseMapperTest {
+class RestResponseMapperTest {
 
-	private PackingReportResponseMapper mapper;
+	private RestResponseMapper mapper;
 
 	private UUID vehicleId;
 	private UUID packageId;
@@ -35,7 +39,7 @@ class PackingReportResponseMapperTest {
 
 	@BeforeEach
 	void setUp() {
-		mapper = Mappers.getMapper(PackingReportResponseMapper.class);
+		mapper = Mappers.getMapper(RestResponseMapper.class);
 
 		vehicleId = UUID.randomUUID();
 		packageId = UUID.randomUUID();
@@ -157,14 +161,31 @@ class PackingReportResponseMapperTest {
 	}
 
 	@Test
-	void shouldMapWeightToDouble() {
+	void shouldMapPackingReportIncludingDomainStatistics() {
 		// given
-		final Weight weight = new Weight(123.45);
+		final Package unpacked = new Package(UUID.randomUUID(), new Dimensions(1.0, 1.0, 1.0), new Weight(1.0));
+		final PackingReport report = new PackingReport(
+				"TestStrategy",
+				List.of(packedVehicle),
+				List.of(unpacked),
+				2,
+				15L,
+				PackingStatistics.of(List.of(packedVehicle), List.of(unpacked))
+		);
 
 		// when
-		final double result = mapper.map(weight);
+		final PackingRunResponse result = mapper.toResponse(report);
 
 		// then
-		assertThat(result).isEqualTo(123.45);
+		assertThat(result.strategyName()).isEqualTo("TestStrategy");
+		assertThat(result.totalPackagesIn()).isEqualTo(2);
+		assertThat(result.elapsedMillis()).isEqualTo(15L);
+		assertThat(result.packedVehicles()).hasSize(1);
+		assertThat(result.unpackedPackages()).extracting(PackageResponse::id).containsExactly(unpacked.id());
+		assertThat(result.packedPackagesCount()).isEqualTo(1);
+		assertThat(result.vehiclesUsed()).isEqualTo(1);
+		assertThat(result.fullyPacked()).isFalse();
+		assertThat(result.averageVolumeUtilization()).isEqualTo(0.03);
+		assertThat(result.averageWeightUtilization()).isEqualTo(0.1);
 	}
 }

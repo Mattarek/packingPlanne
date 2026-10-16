@@ -13,7 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+import java.time.Clock;
 import java.util.List;
 
 /**
@@ -40,15 +40,18 @@ public class DeadLetterRetryScheduler {
 	private final DeadLetterEventRepository deadLetterEventRepository;
 	private final KafkaTemplate<String, Object> kafkaTemplate;
 	private final int batchSize;
+	private final Clock clock;
 
 	public DeadLetterRetryScheduler(
 			final DeadLetterEventRepository deadLetterEventRepository,
 			final KafkaTemplate<String, Object> kafkaTemplate,
-			@Value("${app.kafka.dead-letter.batch-size:50}") final int batchSize
+			@Value("${app.kafka.dead-letter.batch-size:50}") final int batchSize,
+			final Clock clock
 	) {
 		this.deadLetterEventRepository = deadLetterEventRepository;
 		this.kafkaTemplate = kafkaTemplate;
 		this.batchSize = batchSize;
+		this.clock = clock;
 	}
 
 	@Scheduled(
@@ -77,7 +80,7 @@ public class DeadLetterRetryScheduler {
 					)
 					.get();
 
-			event.markResubmitted(Instant.now());
+			event.markResubmitted(clock.instant());
 
 			log.info(
 					"Dead-lettered event resubmitted: eventId={}, topic={}, attempts={}",

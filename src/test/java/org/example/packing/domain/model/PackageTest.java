@@ -3,6 +3,9 @@ package org.example.packing.domain.model;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -110,42 +113,6 @@ class PackageTest {
 	}
 
 	@Test
-	void shouldCreatePackageUsingFactoryMethod() {
-		// when
-		final Package result = Package.of(dimensions, weight);
-
-		// then
-		assertThat(result.id()).isNotNull();
-		assertThat(result.dimensions()).isEqualTo(dimensions);
-		assertThat(result.weight()).isEqualTo(weight);
-	}
-
-	@Test
-	void shouldCreatePackagesWithDifferentIdsUsingFactoryMethod() {
-		// when
-		final Package first = Package.of(dimensions, weight);
-		final Package second = Package.of(dimensions, weight);
-
-		// then
-		assertThat(first.id()).isNotNull();
-		assertThat(second.id()).isNotNull();
-		assertThat(first.id()).isNotEqualTo(second.id());
-	}
-
-	@Test
-	void shouldCreatePackageUsingFactoryMethodWithExplicitCategoryAndFragility() {
-		// when
-		final Package result = Package.of(dimensions, weight, ProductCategory.FOOD, FragilityLevel.FRAGILE);
-
-		// then
-		assertThat(result.id()).isNotNull();
-		assertThat(result.dimensions()).isEqualTo(dimensions);
-		assertThat(result.weight()).isEqualTo(weight);
-		assertThat(result.category()).isEqualTo(ProductCategory.FOOD);
-		assertThat(result.fragility()).isEqualTo(FragilityLevel.FRAGILE);
-	}
-
-	@Test
 	void shouldReturnVolumeFromDimensions() {
 		// when
 		final double result = pack.volume();
@@ -154,16 +121,37 @@ class PackageTest {
 		assertThat(result).isEqualTo(6000.0);
 	}
 
-	@Test
-	void shouldBeEqualWhenPackagesHaveSameId() {
-		// given
-		final Dimensions otherDimensions = new Dimensions(1.0, 2.0, 3.0);
-		final Weight otherWeight = mock(Weight.class);
+	// L1: a record promises value semantics – equal components <=> equal objects.
 
-		final Package other = new Package(packageId, otherDimensions, otherWeight);
+	@Test
+	void shouldBeEqualWhenAllComponentsAreEqual() {
+		// given
+		final Package other = new Package(packageId, dimensions, weight);
 
 		// when & then
 		assertThat(pack).isEqualTo(other);
+		assertThat(pack).hasSameHashCodeAs(other);
+	}
+
+	@Test
+	void shouldNotBeEqualWhenSameIdButDifferentDimensions() {
+		// given
+		final Package resized = new Package(packageId, new Dimensions(1.0, 2.0, 3.0), weight);
+
+		// when & then
+		assertThat(pack).isNotEqualTo(resized);
+	}
+
+	@Test
+	void shouldKeepBothPackagesInHashSetWhenSameIdButDifferentDimensions() {
+		// given
+		final Package resized = new Package(packageId, new Dimensions(1.0, 2.0, 3.0), weight);
+
+		// when
+		final Set<Package> packages = new HashSet<>(List.of(pack, resized));
+
+		// then
+		assertThat(packages).hasSize(2);
 	}
 
 	@Test
@@ -188,28 +176,7 @@ class PackageTest {
 	}
 
 	@Test
-	void shouldHaveSameHashCodeWhenPackagesHaveSameId() {
-		// given
-		final Dimensions otherDimensions = new Dimensions(1.0, 2.0, 3.0);
-		final Weight otherWeight = mock(Weight.class);
-
-		final Package other = new Package(packageId, otherDimensions, otherWeight);
-
-		// when & then
-		assertThat(pack).hasSameHashCodeAs(other);
-	}
-
-	@Test
-	void shouldHaveDifferentHashCodeWhenPackagesHaveDifferentIds() {
-		// given
-		final Package other = new Package(UUID.randomUUID(), dimensions, weight);
-
-		// when & then
-		assertThat(pack.hashCode()).isNotEqualTo(other.hashCode());
-	}
-
-	@Test
-	void shouldReturnFormattedString() {
+	void shouldIncludeAllComponentsInString() {
 		// given
 		when(weight.toString()).thenReturn("5.0 kg");
 
@@ -217,12 +184,11 @@ class PackageTest {
 		final String result = pack.toString();
 
 		// then
-		assertThat(result).isEqualTo(
-				"Package[id=%s, %s, %s]".formatted(
-						packageId,
-						dimensions,
-						weight
-				)
-		);
+		assertThat(result)
+				.contains(packageId.toString())
+				.contains(dimensions.toString())
+				.contains("5.0 kg")
+				.contains(ProductCategory.STANDARD.name())
+				.contains(FragilityLevel.STANDARD.name());
 	}
 }

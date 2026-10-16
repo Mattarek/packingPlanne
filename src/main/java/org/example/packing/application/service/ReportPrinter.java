@@ -3,6 +3,7 @@ package org.example.packing.application.service;
 import org.example.packing.application.dto.PackingReport;
 import org.example.packing.domain.model.Package;
 import org.example.packing.domain.model.PackedVehicle;
+import org.example.packing.domain.model.PackingStatistics;
 import org.example.packing.domain.model.PlacedPackage;
 
 import java.util.Objects;
@@ -22,15 +23,16 @@ public final class ReportPrinter {
 	}
 
 	private void appendHeader(final StringBuilder sb, final PackingReport r) {
+		final PackingStatistics stats = r.statistics();
 		sb.append(SEPARATOR).append('\n');
 		sb.append("PACKING REPORT — strategy: ").append(r.strategyName()).append('\n');
 		sb.append(SEPARATOR).append('\n');
 		sb.append("Input packages:    ").append(r.totalPackagesIn()).append('\n');
-		sb.append("Packed:            ").append(r.getPackedPackagesCount()).append('\n');
+		sb.append("Packed:            ").append(stats.packedPackagesCount()).append('\n');
 		sb.append("Unpacked:          ").append(r.unpackedPackages().size()).append('\n');
-		sb.append("Vehicles used:     ").append(r.getVehiclesUsed()).append('\n');
-		sb.append("Avg vol. usage:    %.1f%%%n".formatted(r.getAverageVolumeUtilization() * 100));
-		sb.append("Avg weight usage:  %.1f%%%n".formatted(r.getAverageWeightUtilization() * 100));
+		sb.append("Vehicles used:     ").append(stats.vehiclesUsed()).append('\n');
+		sb.append("Avg vol. usage:    %.1f%%%n".formatted(stats.averageVolumeUtilization() * 100));
+		sb.append("Avg weight usage:  %.1f%%%n".formatted(stats.averageWeightUtilization() * 100));
 		sb.append("Elapsed:           ").append(r.elapsedMillis()).append(" ms\n");
 		sb.append(SEPARATOR).append('\n');
 	}
@@ -38,7 +40,7 @@ public final class ReportPrinter {
 	private void appendVehicles(final StringBuilder sb, final PackingReport r) {
 		int vehicleNo = 1;
 		for (final PackedVehicle vehicle : r.packedVehicles()) {
-			if (vehicle.placedPackages().isEmpty()) {
+			if (!vehicle.isUsed()) {
 				continue;
 			}
 			sb.append("Vehicle #").append(vehicleNo++)
@@ -74,7 +76,7 @@ public final class ReportPrinter {
 
 	private void appendFooter(final StringBuilder sb, final PackingReport r) {
 		sb.append(SEPARATOR).append('\n');
-		sb.append(r.isFullyPacked()
+		sb.append(r.statistics().fullyPacked()
 				? "✓ All packages successfully packed."
 				: "⚠ Some packages could not be packed — consider adding vehicles.");
 		sb.append('\n').append(SEPARATOR).append('\n');

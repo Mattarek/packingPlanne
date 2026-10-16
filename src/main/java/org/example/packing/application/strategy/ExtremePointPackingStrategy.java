@@ -12,24 +12,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-/**
- * Extreme Point-Based heuristic for 3D Bin Packing with weight constraints.
- * <p>
- * <b>Algorithm:</b>
- * <ol>
- *   <li>Sort packages by configured ordering (default: volume descending)</li>
- *   <li>For each package, try to place it in the currently open vehicle at the
- *       best available extreme point (bottom-left-back rule)</li>
- *   <li>If no extreme point fits, open the next vehicle</li>
- *   <li>If no vehicle can accommodate the package, mark it unpacked</li>
- * </ol>
- * <p>
- * Time complexity: O(n² · v) where n = packages, v = vehicles.
- * Space complexity: O(n).
- * <p>
- * Solution quality: typically 5–15% off optimum on standard 3D-BPP benchmarks
- * (Bischoff &amp; Ratcliff dataset).
- */
 public final class ExtremePointPackingStrategy implements PackingStrategy {
 
 	private final PackageOrdering ordering;
@@ -41,9 +23,18 @@ public final class ExtremePointPackingStrategy implements PackingStrategy {
 	}
 
 	public ExtremePointPackingStrategy(final PackageOrdering ordering) {
+		this(ordering, new BottomLeftBackPositionScorer());
+	}
+
+	/**
+	 * Both heuristics of the algorithm are pluggable: the order packages are
+	 * considered in and how the best extreme point is chosen. The extreme point
+	 * generator is not – it *is* the algorithm, swapping it means a different strategy.
+	 */
+	public ExtremePointPackingStrategy(final PackageOrdering ordering, final PositionScorer positionScorer) {
 		this.ordering = Objects.requireNonNull(ordering, "ordering must not be null");
+		this.positionScorer = Objects.requireNonNull(positionScorer, "positionScorer must not be null");
 		pointGenerator = new ExtremePointGenerator();
-		positionScorer = new PositionScorer();
 	}
 
 	@Override

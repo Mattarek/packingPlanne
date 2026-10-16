@@ -33,10 +33,6 @@ public final class PackedVehicle {
 		return new Weight(vehicle.maxPayload().kilograms() - currentWeight.kilograms());
 	}
 
-	public Weight getRemainingPayload() {
-		return remainingPayload();
-	}
-
 	public double currentVolume() {
 		return placedPackages.stream()
 				.mapToDouble(p -> p.pkg().volume())
@@ -46,6 +42,13 @@ public final class PackedVehicle {
 	public double volumeUtilization() {
 		final double cargo = vehicle.cargoVolume();
 		return cargo == 0 ? 0.0 : currentVolume() / cargo;
+	}
+
+	/**
+	 * A vehicle counts as used once it carries at least one package.
+	 */
+	public boolean isUsed() {
+		return !placedPackages.isEmpty();
 	}
 
 	public double weightUtilization() {
@@ -83,30 +86,6 @@ public final class PackedVehicle {
 		}
 		placedPackages.add(new PlacedPackage(pkg, position));
 		currentWeight = currentWeight.add(pkg.weight());
-	}
-
-	public Vehicle getVehicle() {
-		return vehicle;
-	}
-
-	public List<PlacedPackage> getPlacedPackages() {
-		return Collections.unmodifiableList(placedPackages);
-	}
-
-	public Weight getCurrentWeight() {
-		return currentWeight;
-	}
-
-	public double getCurrentVolume() {
-		return currentVolume();
-	}
-
-	public double getVolumeUtilization() {
-		return volumeUtilization();
-	}
-
-	public double getWeightUtilization() {
-		return weightUtilization();
 	}
 
 	@Override

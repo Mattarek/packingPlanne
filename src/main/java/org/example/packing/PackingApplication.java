@@ -4,12 +4,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.kafka.annotation.EnableKafka;
 
-// Poprzednie punkty do zrobienia zostaly rozwiazane:
-// - bezpieczenstwo mapowania -> PackingMapperConfig (unmappedTargetPolicy = ERROR)
-// - stan bledu + powod -> DeadLetterEventEntity / DeadLetterEventStatus
-// - odblokowanie konsumowania partycji -> application.yml spring.kafka.listener.concurrency
-// - retry bledow -> DeadLetterRetryScheduler
-
 @EnableKafka
 @SpringBootApplication
 public class PackingApplication {
@@ -17,6 +11,25 @@ public class PackingApplication {
 		SpringApplication.run(PackingApplication.class, args);
 	}
 }
+
+// - COPY vs ADD w Dockerfile
+// RUN - doinstalowujesz liby
+// COPY Tylko na adresy
+// ADD adresy i pliki, niebezpieczniejsze
+
+// 1. RUN vs ENTRYPOINT
+// RUN -
+// ENTRYPOINT - w momencie zdefiniowania polecenia, trudno jej nadpisac
+// entryoint i cmd wchodzi w interakcje,
+
+// 2. jakie proxxy jeszcze mamy,
+// warstwa proxy na polu relacyjnym podczas wywolywania gettera na kolekcji
+
+// 3. n + 1
+// 4. kazdy poziom propagacji
+
+// 5. jak zabezpieczyc przez transakcyjnosc
+// 6.
 
 //1. jak wstrzyknac pole z konfiguracji
 //	# value
@@ -78,6 +91,10 @@ public class PackingApplication {
 
 // 4. waiting lock - liquibase, sprawdzic tabele z lockami w bazie danych
 //
-//
-//
-//
+// 5.
+// 1.
+// Partycje logiczne w postgresie
+
+// 2. Na co zwrócić uwage, SOLID, wzorce projektowe, Coupling, Cohesion
+// Coupling - co to zla/dobra
+// Cohesion - co to zla/dobra

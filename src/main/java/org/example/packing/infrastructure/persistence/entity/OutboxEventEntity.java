@@ -99,18 +99,26 @@ public class OutboxEventEntity {
 		attempts = 0;
 	}
 
-	public void markPublished() {
+	public void markPublished(final Instant publishedAt) {
 		status = OutboxEventStatus.PUBLISHED;
-		publishedAt = Instant.now();
+		this.publishedAt = publishedAt;
 	}
 
-	public void markFailed() {
-		status = OutboxEventStatus.FAILED;
+	/**
+	 * Called after every failed publish attempt. Once {@code maxAttempts} is
+	 * reached the event is given up on ({@link OutboxEventStatus#FAILED}) –
+	 * the entity owns this transition, the relay only reports the failure
+	 * (same shape as {@link DeadLetterEventEntity#recordFailure}).
+	 */
+	public void recordFailedAttempt(final int maxAttempts) {
 		attempts++;
+		if (attempts >= maxAttempts) {
+			status = OutboxEventStatus.FAILED;
+		}
 	}
 
-	public void increaseAttempts() {
-		attempts++;
+	public boolean isFailed() {
+		return status == OutboxEventStatus.FAILED;
 	}
 
 	public UUID getId() {

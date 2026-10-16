@@ -1,10 +1,13 @@
 package org.example.packing.infrastructure.kafka.event;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
-import org.example.packing.domain.model.FragilityLevel;
-import org.example.packing.domain.model.ProductCategory;
 
+/**
+ * Part of the external Kafka contract – category and fragility are plain wire
+ * values, translated to domain enums by {@link EventEnumMapper}, so renaming a
+ * domain enum constant cannot silently change the message format.
+ */
 public record PackageCreateRequestItem(
 		@Positive(message = "Length must be positive.")
 		double length,
@@ -18,10 +21,10 @@ public record PackageCreateRequestItem(
 		@Positive(message = "Weight must be positive.")
 		double weight,
 
-		@NotNull(message = "Category must not be null.")
-		ProductCategory category,
+		@NotBlank(message = "Category must not be blank.")
+		String category,
 
-		@NotNull(message = "Fragility must not be null.")
-		FragilityLevel fragility
+		@NotBlank(message = "Fragility must not be blank.")
+		String fragility
 ) {
 }

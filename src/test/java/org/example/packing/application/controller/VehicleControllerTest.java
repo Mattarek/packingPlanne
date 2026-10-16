@@ -1,13 +1,20 @@
 package org.example.packing.application.controller;
 
+import org.example.packing.application.command.CreateVehicleCommand;
+import org.example.packing.application.controller.mapper.RestRequestMapperImpl;
+import org.example.packing.application.controller.mapper.RestResponseMapperImpl;
 import org.example.packing.application.dto.VehicleRequest;
-import org.example.packing.application.dto.VehicleResponse;
 import org.example.packing.application.service.VehicleService;
+import org.example.packing.domain.exception.VehicleNotFoundException;
+import org.example.packing.domain.model.Dimensions;
+import org.example.packing.domain.model.Vehicle;
+import org.example.packing.domain.model.Weight;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(VehicleController.class)
+@Import({RestRequestMapperImpl.class, RestResponseMapperImpl.class})
 class VehicleControllerTest {
 
 	private static final String VEHICLES_URL = "/api/vehicles";
@@ -51,14 +59,15 @@ class VehicleControllerTest {
 	private VehicleRequest vehicleRequest2;
 	private VehicleRequest singleVehicleRequest;
 
-	private VehicleResponse vehicleResponse1;
-	private VehicleResponse vehicleResponse2;
-	private VehicleResponse singleVehicleResponse;
+	private Vehicle vehicle1;
+	private Vehicle vehicle2;
+	private Vehicle singleVehicle;
 
 	private List<VehicleRequest> vehicleRequests;
-	private List<VehicleResponse> vehicleResponses;
+	private List<CreateVehicleCommand> vehicleCommands;
+	private List<Vehicle> vehicles;
 
-	private Page<VehicleResponse> vehicleResponsePage;
+	private Page<Vehicle> vehiclePage;
 
 	@BeforeEach
 	void setUp() {
@@ -83,40 +92,41 @@ class VehicleControllerTest {
 
 		singleVehicleRequest = vehicleRequest1;
 
-		vehicleResponse1 = new VehicleResponse(
+		vehicle1 = new Vehicle(
 				vehicleId1,
 				"Mercedes Sprinter",
-				420.0,
-				180.0,
-				200.0,
-				1000.0
+				new Dimensions(420.0, 180.0, 200.0),
+				new Weight(1000.0)
 		);
 
-		vehicleResponse2 = new VehicleResponse(
+		vehicle2 = new Vehicle(
 				vehicleId2,
 				"Iveco Daily 7t",
-				620.0,
-				220.0,
-				230.0,
-				3500.0
+				new Dimensions(620.0, 220.0, 230.0),
+				new Weight(3500.0)
 		);
 
-		singleVehicleResponse = vehicleResponse1;
+		singleVehicle = vehicle1;
 
 		vehicleRequests = List.of(
 				vehicleRequest1,
 				vehicleRequest2
 		);
 
-		vehicleResponses = List.of(
-				vehicleResponse1,
-				vehicleResponse2
+		vehicleCommands = List.of(
+				new CreateVehicleCommand("Mercedes Sprinter", 420.0, 180.0, 200.0, 1000.0),
+				new CreateVehicleCommand("Iveco Daily 7t", 620.0, 220.0, 230.0, 3500.0)
 		);
 
-		vehicleResponsePage = new PageImpl<>(
-				vehicleResponses,
+		vehicles = List.of(
+				vehicle1,
+				vehicle2
+		);
+
+		vehiclePage = new PageImpl<>(
+				vehicles,
 				PageRequest.of(0, 20),
-				vehicleResponses.size()
+				vehicles.size()
 		);
 	}
 
@@ -127,7 +137,7 @@ class VehicleControllerTest {
 
 	@Test
 	void shouldCreateVehicles() throws Exception {
-		when(vehicleService.createVehicles(vehicleRequests)).thenReturn(vehicleResponses);
+		when(vehicleService.createVehicles(vehicleCommands)).thenReturn(vehicles);
 
 		mockMvc.perform(post(VEHICLES_URL)
 						.contentType(APPLICATION_JSON)
@@ -148,12 +158,12 @@ class VehicleControllerTest {
 				.andExpect(jsonPath("$.data[1].height").value(230.0))
 				.andExpect(jsonPath("$.data[1].maxPayload").value(3500.0));
 
-		verify(vehicleService).createVehicles(vehicleRequests);
+		verify(vehicleService).createVehicles(vehicleCommands);
 	}
 
 	@Test
 	void shouldReturnVehicles() throws Exception {
-		when(vehicleService.getVehicles(0, 20)).thenReturn(vehicleResponsePage);
+		when(vehicleService.getVehicles(0, 20)).thenReturn(vehiclePage);
 
 		mockMvc.perform(get(VEHICLES_URL)
 						.param("page", "0")
@@ -179,7 +189,7 @@ class VehicleControllerTest {
 
 	@Test
 	void shouldReturnVehicleById() throws Exception {
-		when(vehicleService.getVehicle(vehicleId1)).thenReturn(singleVehicleResponse);
+		when(vehicleService.getVehicle(vehicleId1)).thenReturn(singleVehicle);
 
 		mockMvc.perform(get(VEHICLES_URL + "/{id}", vehicleId1))
 				.andExpect(status().isOk())
@@ -222,5 +232,20 @@ class VehicleControllerTest {
 				.andExpect(status().isBadRequest());
 
 		verify(vehicleService, never()).getVehicle(any());
+	}
+
+	@Test
+	void shouldReturnBadRequestWhenSizeExceedsMaximum() throws Exception {
+		mockMvc.perform(get(VEHICLES_URL + "?size=99999"))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void shouldReturnNotFoundWhenVehicleDoesNotExist() throws Exception {
+		when(vehicleService.getVehicle(vehicleId1)).thenThrow(new VehicleNotFoundException(vehicleId1));
+
+		mockMvc.perform(get(VEHICLES_URL + "/{id}", vehicleId1))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.success").value(false));
 	}
 }

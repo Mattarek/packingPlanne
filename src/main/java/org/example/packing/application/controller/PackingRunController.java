@@ -1,9 +1,9 @@
 package org.example.packing.application.controller;
 
+import org.example.packing.application.controller.mapper.RestResponseMapper;
 import org.example.packing.application.dto.PackingReport;
 import org.example.packing.application.dto.PackingRunResponse;
 import org.example.packing.application.service.PackingRunnerService;
-import org.example.packing.infrastructure.persistence.mapper.PackingReportResponseMapper;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,20 +13,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class PackingRunController {
 
 	private final PackingRunnerService packingRunnerService;
-	private final PackingReportResponseMapper packingReportResponseMapper;
+	private final RestResponseMapper responseMapper;
 
 	public PackingRunController(
 			final PackingRunnerService packingRunnerService,
-			final PackingReportResponseMapper packingReportResponseMapper
+			final RestResponseMapper responseMapper
 	) {
 		this.packingRunnerService = packingRunnerService;
-		this.packingReportResponseMapper = packingReportResponseMapper;
+		this.responseMapper = responseMapper;
 	}
 
 	@PostMapping
 	public PackingRunResponse runPacking() {
 		final PackingReport report = packingRunnerService.runPacking();
 
-		return packingReportResponseMapper.toResponse(report);
+		return responseMapper.toResponse(report);
 	}
 }

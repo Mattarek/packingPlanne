@@ -66,6 +66,14 @@ spring:
 
 
 app:
+  packing:
+    acceptance:
+      # PackageAcceptancePolicy limits (MaxDimensionsRule, MaxWeightRule)
+      max-length-cm: 120.0
+      max-width-cm: 80.0
+      max-height-cm: 80.0
+      max-weight-kg: 30.0
+
   kafka:
     enabled: true
 

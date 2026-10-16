@@ -1,7 +1,6 @@
 package org.example.packing.infrastructure.persistence.mapper;
 
-import org.example.packing.application.dto.PackageRequest;
-import org.example.packing.application.dto.PackageResponse;
+import org.example.packing.application.mapper.PackingMapperConfig;
 import org.example.packing.domain.model.Dimensions;
 import org.example.packing.domain.model.Package;
 import org.example.packing.domain.model.Weight;
@@ -11,27 +10,27 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
+/**
+ * Persistence <-> domain only. Changes only when the table or the domain model changes.
+ */
 @Mapper(config = PackingMapperConfig.class)
-public interface PackagePersistenceMapper {
+public interface PackageEntityMapper {
+
 	@Mapping(target = "dimensions", source = "entity")
 	@Mapping(target = "weight", source = "weight")
 	Package toDomain(PackageEntity entity);
 
 	List<Package> toDomainList(List<PackageEntity> entities);
 
-	@Mapping(target = "id", ignore = true)
-	PackageEntity toEntity(PackageRequest request);
+	@Mapping(target = "length", source = "dimensions.length")
+	@Mapping(target = "width", source = "dimensions.width")
+	@Mapping(target = "height", source = "dimensions.height")
+	@Mapping(target = "weight", source = "weight.kilograms")
+	PackageEntity toEntity(Package pkg);
 
-	List<PackageEntity> toEntityList(List<PackageRequest> requests);
+	List<PackageEntity> toEntityList(List<Package> packages);
 
-	@Mapping(target = "length", source = "length")
-	@Mapping(target = "width", source = "width")
-	@Mapping(target = "height", source = "height")
 	Dimensions toDimensions(PackageEntity entity);
-
-	PackageResponse toResponse(PackageEntity entity);
-
-	List<PackageResponse> toResponseList(List<PackageEntity> entities);
 
 	default Weight toWeight(final double kilograms) {
 		return new Weight(kilograms);

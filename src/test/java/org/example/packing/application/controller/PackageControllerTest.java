@@ -1,15 +1,23 @@
 package org.example.packing.application.controller;
 
+import org.example.packing.application.command.CreatePackageCommand;
+import org.example.packing.application.controller.mapper.RestRequestMapperImpl;
+import org.example.packing.application.controller.mapper.RestResponseMapperImpl;
 import org.example.packing.application.dto.PackageRequest;
-import org.example.packing.application.dto.PackageResponse;
 import org.example.packing.application.service.PackageService;
+import org.example.packing.domain.exception.PackageNotAcceptedException;
+import org.example.packing.domain.exception.PackageNotFoundException;
+import org.example.packing.domain.model.Dimensions;
 import org.example.packing.domain.model.FragilityLevel;
+import org.example.packing.domain.model.Package;
 import org.example.packing.domain.model.ProductCategory;
+import org.example.packing.domain.model.Weight;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -33,6 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PackageController.class)
+@Import({RestRequestMapperImpl.class, RestResponseMapperImpl.class})
 class PackageControllerTest {
 
 	private static final String PACKAGES_URL = "/api/packages";
@@ -53,14 +62,15 @@ class PackageControllerTest {
 	private PackageRequest packageRequest2;
 	private PackageRequest singlePackageRequest;
 
-	private PackageResponse packageResponse1;
-	private PackageResponse packageResponse2;
-	private PackageResponse singlePackageResponse;
+	private Package package1;
+	private Package package2;
+	private Package singlePackage;
 
 	private List<PackageRequest> packageRequests;
-	private List<PackageResponse> packageResponses;
+	private List<CreatePackageCommand> packageCommands;
+	private List<Package> packages;
 
-	private Page<PackageResponse> packageResponsePage;
+	private Page<Package> packagePage;
 
 	@BeforeEach
 	void setUp() {
@@ -87,42 +97,43 @@ class PackageControllerTest {
 
 		singlePackageRequest = packageRequest1;
 
-		packageResponse1 = new PackageResponse(
+		package1 = new Package(
 				packageId1,
-				90.0,
-				60.0,
-				50.0,
-				200.0,
+				new Dimensions(90.0, 60.0, 50.0),
+				new Weight(200.0),
 				ProductCategory.STANDARD,
 				FragilityLevel.STANDARD
 		);
 
-		packageResponse2 = new PackageResponse(
+		package2 = new Package(
 				packageId2,
-				40.0,
-				20.0,
-				10.0,
-				10.0,
+				new Dimensions(40.0, 20.0, 10.0),
+				new Weight(10.0),
 				ProductCategory.ELECTRONICS,
 				FragilityLevel.FRAGILE
 		);
 
-		singlePackageResponse = packageResponse1;
+		singlePackage = package1;
 
 		packageRequests = List.of(
 				packageRequest1,
 				packageRequest2
 		);
 
-		packageResponses = List.of(
-				packageResponse1,
-				packageResponse2
+		packageCommands = List.of(
+				new CreatePackageCommand(90.0, 60.0, 50.0, 200.0, ProductCategory.STANDARD, FragilityLevel.STANDARD),
+				new CreatePackageCommand(40.0, 20.0, 10.0, 10.0, ProductCategory.ELECTRONICS, FragilityLevel.FRAGILE)
 		);
 
-		packageResponsePage = new PageImpl<>(
-				packageResponses,
+		packages = List.of(
+				package1,
+				package2
+		);
+
+		packagePage = new PageImpl<>(
+				packages,
 				PageRequest.of(0, 20),
-				packageResponses.size()
+				packages.size()
 		);
 	}
 
@@ -133,7 +144,7 @@ class PackageControllerTest {
 
 	@Test
 	void shouldCreatePackages() throws Exception {
-		when(packageService.createPackages(packageRequests)).thenReturn(packageResponses);
+		when(packageService.createPackages(packageCommands)).thenReturn(packages);
 
 		mockMvc.perform(post(PACKAGES_URL)
 						.contentType(APPLICATION_JSON)
@@ -152,12 +163,12 @@ class PackageControllerTest {
 				.andExpect(jsonPath("$.data[1].height").value(10.0))
 				.andExpect(jsonPath("$.data[1].weight").value(10.0));
 
-		verify(packageService).createPackages(packageRequests);
+		verify(packageService).createPackages(packageCommands);
 	}
 
 	@Test
 	void shouldReturnPackages() throws Exception {
-		when(packageService.getPackages(0, 20)).thenReturn(packageResponsePage);
+		when(packageService.getPackages(0, 20)).thenReturn(packagePage);
 
 		mockMvc.perform(get(PACKAGES_URL)
 						.param("page", "0")
@@ -181,7 +192,7 @@ class PackageControllerTest {
 
 	@Test
 	void shouldReturnPackageById() throws Exception {
-		when(packageService.getPackage(packageId1)).thenReturn(singlePackageResponse);
+		when(packageService.getPackage(packageId1)).thenReturn(singlePackage);
 
 		mockMvc.perform(get(PACKAGES_URL + "/{id}", packageId1))
 				.andExpect(status().isOk())
@@ -223,5 +234,33 @@ class PackageControllerTest {
 				.andExpect(status().isBadRequest());
 
 		verify(packageService, never()).getPackage(any());
+	}
+
+	@Test
+	void shouldReturnBadRequestWhenSizeExceedsMaximum() throws Exception {
+		mockMvc.perform(get(PACKAGES_URL + "?size=99999"))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void shouldReturnNotFoundForAnyNotFoundDomainException() throws Exception {
+		when(packageService.getPackage(packageId1)).thenThrow(new PackageNotFoundException(packageId1));
+
+		mockMvc.perform(get(PACKAGES_URL + "/{id}", packageId1))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.success").value(false))
+				.andExpect(jsonPath("$.message").value("Package not found: " + packageId1));
+	}
+
+	@Test
+	void shouldReturnUnprocessableEntityForAnyBusinessRuleViolation() throws Exception {
+		when(packageService.createPackages(any())).thenThrow(new PackageNotAcceptedException("too heavy"));
+
+		mockMvc.perform(post(PACKAGES_URL)
+						.contentType(APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(packageRequests)))
+				.andExpect(status().isUnprocessableContent())
+				.andExpect(jsonPath("$.success").value(false))
+				.andExpect(jsonPath("$.message").value("Package not accepted: too heavy"));
 	}
 }

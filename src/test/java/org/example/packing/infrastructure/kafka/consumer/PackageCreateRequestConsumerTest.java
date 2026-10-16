@@ -1,18 +1,21 @@
 package org.example.packing.infrastructure.kafka.consumer;
 
-import org.example.packing.application.service.PackageCreateRequestProcessor;
+import org.example.packing.infrastructure.kafka.deadletter.DeadLetterRecorder;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestEvent;
-import org.example.packing.infrastructure.persistence.repository.DeadLetterEventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import tools.jackson.databind.json.JsonMapper;
 
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PackageCreateRequestConsumerTest {
@@ -21,7 +24,7 @@ class PackageCreateRequestConsumerTest {
 	private PackageCreateRequestProcessor processor;
 
 	@Mock
-	private DeadLetterEventRepository deadLetterEventRepository;
+	private DeadLetterRecorder deadLetterRecorder;
 
 	private PackageCreateRequestConsumer consumer;
 
@@ -29,10 +32,8 @@ class PackageCreateRequestConsumerTest {
 	void setUp() {
 		consumer = new PackageCreateRequestConsumer(
 				processor,
-				deadLetterEventRepository,
-				JsonMapper.builder().build(),
-				"package-create-requests",
-				5
+				deadLetterRecorder,
+				"package-create-requests"
 		);
 	}
 
@@ -47,5 +48,30 @@ class PackageCreateRequestConsumerTest {
 		// then
 		verify(processor).process(event);
 		verifyNoMoreInteractions(processor);
+	}
+
+	@Test
+	void shouldDelegateDeadLetterToRecorder() {
+		// given
+		final UUID eventId = UUID.randomUUID();
+		final PackageCreateRequestEvent event = mock(PackageCreateRequestEvent.class);
+		when(event.eventId()).thenReturn(eventId);
+
+		// when
+		consumer.handleDlt(event, "boom");
+
+		// then
+		verify(deadLetterRecorder).record(
+				eventId, "PACKAGE_CREATE_REQUESTED", "package-create-requests", event, "boom"
+		);
+	}
+
+	@Test
+	void shouldPassNullIdToRecorderForPoisonPill() {
+		// when
+		consumer.handleDlt(null, "malformed");
+
+		// then
+		verify(deadLetterRecorder).record(isNull(), any(), any(), isNull(), any());
 	}
 }

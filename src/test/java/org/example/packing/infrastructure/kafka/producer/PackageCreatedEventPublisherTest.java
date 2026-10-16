@@ -1,8 +1,10 @@
 package org.example.packing.infrastructure.kafka.producer;
 
-import org.example.packing.application.dto.PackageResponse;
+import org.example.packing.domain.model.Dimensions;
 import org.example.packing.domain.model.FragilityLevel;
+import org.example.packing.domain.model.Package;
 import org.example.packing.domain.model.ProductCategory;
+import org.example.packing.domain.model.Weight;
 import org.example.packing.infrastructure.persistence.entity.OutboxEventEntity;
 import org.example.packing.infrastructure.persistence.repository.OutboxEventRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +16,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -27,6 +32,8 @@ class PackageCreatedEventPublisherTest {
 
 	private static final String TOPIC_NAME = "package-created-events";
 
+	private static final Instant NOW = Instant.parse("2026-01-01T12:00:00Z");
+
 	@Mock
 	private OutboxEventRepository outboxEventRepository;
 
@@ -35,7 +42,13 @@ class PackageCreatedEventPublisherTest {
 	@BeforeEach
 	void setUp() {
 		final ObjectMapper objectMapper = JsonMapper.builder().build();
-		publisher = new PackageCreatedEventPublisher(outboxEventRepository, objectMapper, TOPIC_NAME);
+		publisher = new PackageCreatedEventPublisher(
+				outboxEventRepository,
+				objectMapper,
+				Clock.fixed(NOW, ZoneOffset.UTC),
+				UUID::randomUUID,
+				TOPIC_NAME
+		);
 	}
 
 	@Test
@@ -50,13 +63,13 @@ class PackageCreatedEventPublisherTest {
 	@Test
 	void shouldSaveOutboxEventForCreatedPackages() {
 		// given
-		final PackageResponse response = new PackageResponse(
-				UUID.randomUUID(), 10.0, 20.0, 30.0, 5.0,
-				ProductCategory.STANDARD, FragilityLevel.STANDARD
+		final Package pkg = new Package(
+				UUID.randomUUID(), new Dimensions(10.0, 20.0, 30.0), new Weight(5.0),
+				ProductCategory.FOOD, FragilityLevel.FRAGILE
 		);
 
 		// when
-		publisher.publish(List.of(response));
+		publisher.publish(List.of(pkg));
 
 		// then
 		final ArgumentCaptor<OutboxEventEntity> captor = ArgumentCaptor.forClass(OutboxEventEntity.class);
@@ -66,9 +79,12 @@ class PackageCreatedEventPublisherTest {
 		assertThat(saved.getTopicName()).isEqualTo(TOPIC_NAME);
 		assertThat(saved.getEventType()).isEqualTo("PACKAGE_CREATED");
 		assertThat(saved.getAggregateId()).isEqualTo(saved.getEventId().toString());
+		assertThat(saved.getCreatedAt()).isEqualTo(NOW);
 		assertThat(saved.getPayload())
-				.contains(response.id().toString())
-				.contains("PACKAGE_CREATED");
+				.contains(pkg.id().toString())
+				.contains("PACKAGE_CREATED")
+				.contains("\"category\":\"FOOD\"")
+				.contains("\"fragility\":\"FRAGILE\"");
 	}
 
 	/**
@@ -82,15 +98,14 @@ class PackageCreatedEventPublisherTest {
 	void shouldKeepAggregateIdBoundedRegardlessOfBatchSize() {
 		// given: a batch large enough that the old "join every id" logic
 		// would have overflowed a VARCHAR(100) column (40 UUIDs ~= 1479 chars)
-		final List<PackageResponse> responses = IntStream.range(0, 40)
-				.mapToObj(i -> new PackageResponse(
-						UUID.randomUUID(), 10.0, 20.0, 30.0, 5.0,
-						ProductCategory.STANDARD, FragilityLevel.STANDARD
+		final List<Package> packages = IntStream.range(0, 40)
+				.mapToObj(i -> new Package(
+						UUID.randomUUID(), new Dimensions(10.0, 20.0, 30.0), new Weight(5.0)
 				))
 				.toList();
 
 		// when
-		publisher.publish(responses);
+		publisher.publish(packages);
 
 		// then
 		final ArgumentCaptor<OutboxEventEntity> captor = ArgumentCaptor.forClass(OutboxEventEntity.class);

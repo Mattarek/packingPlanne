@@ -12,9 +12,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 
-	private final VehicleRepository vehicleRepository;
+	private final VehicleJpaRepository vehicleRepository;
 
-	public VehicleRepositoryIT(final VehicleRepository vehicleRepository) {
+	public VehicleRepositoryIT(final VehicleJpaRepository vehicleRepository) {
 		this.vehicleRepository = vehicleRepository;
 	}
 
@@ -22,7 +22,7 @@ class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 	void shouldSaveAndFindVehicleUsingPostgresContainer() {
 		// given
 		final VehiclesEntity entity = new VehiclesEntity(
-				null,
+				UUID.randomUUID(),
 				"Truck 1",
 				100.0,
 				50.0,
@@ -51,7 +51,7 @@ class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 	void shouldDeleteVehicleUsingPostgresContainer() {
 		// given
 		final VehiclesEntity entity = new VehiclesEntity(
-				null,
+				UUID.randomUUID(),
 				"Truck 1",
 				100.0,
 				50.0,
@@ -73,7 +73,7 @@ class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 	void shouldFindAllSavedVehiclesUsingPostgresContainer() {
 		// given
 		final VehiclesEntity first = new VehiclesEntity(
-				null,
+				UUID.randomUUID(),
 				"Small truck",
 				100.0,
 				50.0,
@@ -82,7 +82,7 @@ class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 		);
 
 		final VehiclesEntity second = new VehiclesEntity(
-				null,
+				UUID.randomUUID(),
 				"Big truck",
 				200.0,
 				100.0,
@@ -107,7 +107,7 @@ class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 	void shouldGenerateDifferentIdsForDifferentVehicles() {
 		// given
 		final VehiclesEntity first = new VehiclesEntity(
-				null,
+				UUID.randomUUID(),
 				"Small truck",
 				100.0,
 				50.0,
@@ -116,7 +116,7 @@ class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 		);
 
 		final VehiclesEntity second = new VehiclesEntity(
-				null,
+				UUID.randomUUID(),
 				"Big truck",
 				200.0,
 				100.0,

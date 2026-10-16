@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.util.List;
 
 @Component
@@ -30,17 +31,20 @@ public class OutboxEventRelay {
 	private final KafkaTemplate<String, Object> kafkaTemplate;
 	private final int batchSize;
 	private final int maxAttempts;
+	private final Clock clock;
 
 	public OutboxEventRelay(
 			final OutboxEventRepository outboxEventRepository,
 			final KafkaTemplate<String, Object> kafkaTemplate,
 			@Value("${app.kafka.outbox.batch-size:100}") final int batchSize,
-			@Value("${app.kafka.outbox.max-attempts:5}") final int maxAttempts
+			@Value("${app.kafka.outbox.max-attempts:5}") final int maxAttempts,
+			final Clock clock
 	) {
 		this.outboxEventRepository = outboxEventRepository;
 		this.kafkaTemplate = kafkaTemplate;
 		this.batchSize = batchSize;
 		this.maxAttempts = maxAttempts;
+		this.clock = clock;
 	}
 
 	@Scheduled(
@@ -69,7 +73,7 @@ public class OutboxEventRelay {
 					)
 					.get();
 
-			event.markPublished();
+			event.markPublished(clock.instant());
 
 			log.info(
 					"Outbox event published: eventId={}, topic={}",
@@ -77,9 +81,9 @@ public class OutboxEventRelay {
 					event.getTopicName()
 			);
 		} catch (final Exception exception) {
-			if (event.getAttempts() + 1 >= maxAttempts) {
-				event.markFailed();
+			event.recordFailedAttempt(maxAttempts);
 
+			if (event.isFailed()) {
 				log.error(
 						"Outbox event permanently failed after {} attempts: eventId={}, topic={}",
 						event.getAttempts(),
@@ -88,8 +92,6 @@ public class OutboxEventRelay {
 						exception
 				);
 			} else {
-				event.increaseAttempts();
-
 				log.warn(
 						"Outbox event publish failed, will retry: eventId={}, topic={}, attempts={}",
 						event.getEventId(),

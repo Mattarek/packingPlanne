@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -49,6 +50,40 @@ class ExtremePointPackingStrategyTest {
 		assertThatThrownBy(() -> new ExtremePointPackingStrategy(null))
 				.isInstanceOf(NullPointerException.class)
 				.hasMessage("ordering must not be null");
+	}
+
+	@Test
+	void shouldThrowExceptionWhenPositionScorerIsNull() {
+		// when & then
+		assertThatThrownBy(() -> new ExtremePointPackingStrategy(PackageOrdering.VOLUME_DESC, null))
+				.isInstanceOf(NullPointerException.class)
+				.hasMessage("positionScorer must not be null");
+	}
+
+	@Test
+	void shouldPlaceUsingTheInjectedPositionHeuristic() {
+		// given: O5 – two heuristics compared in one test, no change to the strategy
+		final List<Package> packages = List.of(
+				createPackage(new Dimensions(10.0, 10.0, 10.0), new Weight(1.0)),
+				createPackage(new Dimensions(10.0, 10.0, 10.0), new Weight(1.0))
+		);
+		final PositionScorer stackFirst = () -> Comparator.comparingDouble(Position::z).reversed();
+
+		// when
+		final Position defaultSecond = secondPosition(
+				new ExtremePointPackingStrategy(PackageOrdering.VOLUME_DESC).pack(packages, List.of(vehicle))
+		);
+		final Position stackedSecond = secondPosition(
+				new ExtremePointPackingStrategy(PackageOrdering.VOLUME_DESC, stackFirst).pack(packages, List.of(vehicle))
+		);
+
+		// then
+		assertThat(defaultSecond.z()).isZero();
+		assertThat(stackedSecond.z()).isEqualTo(10.0);
+	}
+
+	private static Position secondPosition(final PackingStrategy.PackingResult result) {
+		return result.packedVehicles().get(0).placedPackages().get(1).position();
 	}
 
 	@Test

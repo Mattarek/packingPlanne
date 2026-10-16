@@ -10,13 +10,13 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class PositionScorerTest {
+class BottomLeftBackPositionScorerTest {
 
 	private PositionScorer positionScorer;
 
 	@BeforeEach
 	void setUp() {
-		positionScorer = new PositionScorer();
+		positionScorer = new BottomLeftBackPositionScorer();
 	}
 
 	@Test

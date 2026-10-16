@@ -7,14 +7,16 @@ import org.example.packing.integration.AbstractPostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class PackageRepositoryIT extends AbstractPostgresIntegrationTest {
 
-	private final PackageRepository packageRepository;
+	private final PackageJpaRepository packageRepository;
 
-	public PackageRepositoryIT(final PackageRepository packageRepository) {
+	public PackageRepositoryIT(final PackageJpaRepository packageRepository) {
 		this.packageRepository = packageRepository;
 	}
 
@@ -22,7 +24,7 @@ class PackageRepositoryIT extends AbstractPostgresIntegrationTest {
 	void shouldSaveAndFindPackageUsingPostgresContainer() {
 		// given
 		final PackageEntity entity = new PackageEntity(
-				null,
+				UUID.randomUUID(),
 				10.0,
 				20.0,
 				30.0,
@@ -51,7 +53,7 @@ class PackageRepositoryIT extends AbstractPostgresIntegrationTest {
 	void shouldDeletePackageUsingPostgresContainer() {
 		// given
 		final PackageEntity entity = new PackageEntity(
-				null,
+				UUID.randomUUID(),
 				10.0,
 				20.0,
 				30.0,
@@ -74,7 +76,7 @@ class PackageRepositoryIT extends AbstractPostgresIntegrationTest {
 	void shouldFindAllSavedPackagesUsingPostgresContainer() {
 		// given
 		final PackageEntity first = new PackageEntity(
-				null,
+				UUID.randomUUID(),
 				10.0,
 				20.0,
 				30.0,
@@ -84,7 +86,7 @@ class PackageRepositoryIT extends AbstractPostgresIntegrationTest {
 		);
 
 		final PackageEntity second = new PackageEntity(
-				null,
+				UUID.randomUUID(),
 				40.0,
 				50.0,
 				60.0,
@@ -110,7 +112,7 @@ class PackageRepositoryIT extends AbstractPostgresIntegrationTest {
 	void shouldGenerateDifferentIdsForDifferentPackages() {
 		// given
 		final PackageEntity first = new PackageEntity(
-				null,
+				UUID.randomUUID(),
 				10.0,
 				20.0,
 				30.0,
@@ -120,7 +122,7 @@ class PackageRepositoryIT extends AbstractPostgresIntegrationTest {
 		);
 
 		final PackageEntity second = new PackageEntity(
-				null,
+				UUID.randomUUID(),
 				40.0,
 				50.0,
 				60.0,

@@ -3,7 +3,7 @@ package org.example.packing.integration;
 import org.example.packing.domain.model.FragilityLevel;
 import org.example.packing.domain.model.ProductCategory;
 import org.example.packing.infrastructure.persistence.entity.PackageEntity;
-import org.example.packing.infrastructure.persistence.repository.PackageRepository;
+import org.example.packing.infrastructure.persistence.repository.PackageJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -14,10 +14,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class PackageEntityMappingIT extends AbstractPostgresIntegrationTest {
-	private final PackageRepository packageRepository;
+	private final PackageJpaRepository packageRepository;
 	private final JdbcTemplate jdbcTemplate;
 
-	public PackageEntityMappingIT(final PackageRepository packageRepository, final JdbcTemplate jdbcTemplate) {
+	public PackageEntityMappingIT(final PackageJpaRepository packageRepository, final JdbcTemplate jdbcTemplate) {
 		this.packageRepository = packageRepository;
 		this.jdbcTemplate = jdbcTemplate;
 	}
@@ -25,7 +25,7 @@ public class PackageEntityMappingIT extends AbstractPostgresIntegrationTest {
 	@Test
 	void shouldPersistPackageEntityToCorrectDatabaseColumns() {
 		final PackageEntity packageEntity = new PackageEntity(
-				null,
+				UUID.randomUUID(),
 				10.0,
 				20.0,
 				30.0,

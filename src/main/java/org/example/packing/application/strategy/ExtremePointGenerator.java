@@ -6,19 +6,6 @@ import org.example.packing.domain.model.Position;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-/**
- * Generates extreme points (candidate placement positions) for the
- * Extreme-Point-Based 3D Bin Packing heuristic
- * (Crainic, Perboli, Tadei — "Extreme Point-Based Heuristics for Three-Dimensional
- * Bin Packing", INFORMS Journal on Computing, 2008).
- * <p>
- * When a package is placed, this generator yields up to three new extreme points:
- * one to its right (along X), one behind it (along Y), and one on top (along Z).
- * <p>
- * This is a simplified projection-free variant — sufficient for production use cases
- * with reasonable item counts (≲ 10⁴) and dramatically simpler than the full
- * projection-based algorithm.
- */
 final class ExtremePointGenerator {
 
 	/**

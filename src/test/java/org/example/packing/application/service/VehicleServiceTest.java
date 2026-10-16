@@ -1,21 +1,17 @@
 package org.example.packing.application.service;
 
-import org.example.packing.application.dto.VehicleRequest;
-import org.example.packing.application.dto.VehicleResponse;
+import org.example.packing.application.command.CreateVehicleCommand;
+import org.example.packing.application.port.VehicleRepository;
 import org.example.packing.domain.exception.VehicleNotFoundException;
-import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
-import org.example.packing.infrastructure.persistence.mapper.VehiclePersistenceMapper;
-import org.example.packing.infrastructure.persistence.repository.VehicleRepository;
-
+import org.example.packing.domain.model.Dimensions;
+import org.example.packing.domain.model.Vehicle;
+import org.example.packing.domain.model.Weight;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -28,9 +24,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -40,117 +34,76 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class VehicleServiceTest {
 
+	private static final UUID GENERATED_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
+
 	@Mock
 	private VehicleRepository vehicleRepository;
 
-	@Mock
-	private VehiclePersistenceMapper vehicleMapper;
-
-	@InjectMocks
 	private VehicleService vehicleService;
 
 	private UUID vehicleId;
-
-	private VehicleRequest vehicleRequest;
-	private VehicleResponse vehicleResponse;
-	private VehiclesEntity vehicleEntity;
-
-	private List<VehicleRequest> vehicleRequests;
-	private List<VehiclesEntity> vehicleEntities;
-	private List<VehicleResponse> vehicleResponses;
+	private Vehicle existingVehicle;
 
 	@BeforeEach
 	void setUp() {
+		vehicleService = new VehicleService(vehicleRepository, () -> GENERATED_ID);
+
 		vehicleId = UUID.randomUUID();
-
-		vehicleRequest = mock(VehicleRequest.class);
-		vehicleResponse = mock(VehicleResponse.class);
-		vehicleEntity = mock(VehiclesEntity.class);
-
-		vehicleRequests = List.of(vehicleRequest);
-		vehicleEntities = List.of(vehicleEntity);
-		vehicleResponses = List.of(vehicleResponse);
+		existingVehicle = new Vehicle(vehicleId, "Van", new Dimensions(420.0, 180.0, 200.0), new Weight(1000.0));
 	}
 
 	@Test
 	void shouldCreateVehicles() {
 		// given
-		stubValidVehicleRequest();
+		final Vehicle expected = new Vehicle(
+				GENERATED_ID,
+				"Van",
+				new Dimensions(420.0, 180.0, 200.0),
+				new Weight(1000.0)
+		);
 
-		when(vehicleMapper.toEntityList(vehicleRequests))
-				.thenReturn(vehicleEntities);
-
-		when(vehicleRepository.saveAll(vehicleEntities))
-				.thenReturn(vehicleEntities);
-
-		when(vehicleMapper.toResponseList(vehicleEntities))
-				.thenReturn(vehicleResponses);
+		when(vehicleRepository.saveAll(List.of(expected))).thenReturn(List.of(expected));
 
 		// when
-		final List<VehicleResponse> result = vehicleService.createVehicles(vehicleRequests);
+		final List<Vehicle> result = vehicleService.createVehicles(List.of(
+				new CreateVehicleCommand("Van", 420.0, 180.0, 200.0, 1000.0)
+		));
 
 		// then
-		assertThat(result).isEqualTo(vehicleResponses);
+		assertThat(result).containsExactly(expected);
 
-		verify(vehicleMapper).toEntityList(vehicleRequests);
-		verify(vehicleRepository).saveAll(vehicleEntities);
-		verify(vehicleMapper).toResponseList(vehicleEntities);
-
-		verifyNoMoreInteractions(vehicleMapper, vehicleRepository);
+		verify(vehicleRepository).saveAll(List.of(expected));
+		verifyNoMoreInteractions(vehicleRepository);
 	}
 
 	@Test
 	void shouldRejectVehicleWithNonPositiveDimensionWithoutTouchingRepository() {
-		// given: Dimensions checks length, then width, then height —
-		// only stub what's actually evaluated before it short-circuits.
-		when(vehicleRequest.length()).thenReturn(420.0);
-		when(vehicleRequest.width()).thenReturn(0.0);
-
 		// when & then
-		assertThatThrownBy(() -> vehicleService.createVehicles(vehicleRequests))
-				.isInstanceOf(IllegalArgumentException.class);
+		assertThatThrownBy(() -> vehicleService.createVehicles(List.of(
+				new CreateVehicleCommand("Van", 420.0, 0.0, 200.0, 1000.0)
+		))).isInstanceOf(IllegalArgumentException.class);
 
-		verifyNoInteractions(vehicleMapper, vehicleRepository);
+		verifyNoInteractions(vehicleRepository);
 	}
 
 	@Test
 	void shouldRejectVehicleWithInfiniteDimensionWithoutTouchingRepository() {
-		// given: length fails first, so Dimensions never reaches width/height.
-		when(vehicleRequest.length()).thenReturn(Double.POSITIVE_INFINITY);
-
 		// when & then
-		assertThatThrownBy(() -> vehicleService.createVehicles(vehicleRequests))
-				.isInstanceOf(IllegalArgumentException.class);
+		assertThatThrownBy(() -> vehicleService.createVehicles(List.of(
+				new CreateVehicleCommand("Van", Double.POSITIVE_INFINITY, 180.0, 200.0, 1000.0)
+		))).isInstanceOf(IllegalArgumentException.class);
 
-		verifyNoInteractions(vehicleMapper, vehicleRepository);
+		verifyNoInteractions(vehicleRepository);
 	}
 
 	@Test
 	void shouldRejectVehicleWithNegativeMaxPayloadWithoutTouchingRepository() {
-		// given
-		stubVehicleRequest(420.0, 180.0, 200.0, -1000.0);
-
 		// when & then
-		assertThatThrownBy(() -> vehicleService.createVehicles(vehicleRequests))
-				.isInstanceOf(IllegalArgumentException.class);
+		assertThatThrownBy(() -> vehicleService.createVehicles(List.of(
+				new CreateVehicleCommand("Van", 420.0, 180.0, 200.0, -1000.0)
+		))).isInstanceOf(IllegalArgumentException.class);
 
-		verifyNoInteractions(vehicleMapper, vehicleRepository);
-	}
-
-	private void stubValidVehicleRequest() {
-		stubVehicleRequest(420.0, 180.0, 200.0, 1000.0);
-	}
-
-	private void stubVehicleRequest(
-			final double length,
-			final double width,
-			final double height,
-			final double maxPayload
-	) {
-		when(vehicleRequest.length()).thenReturn(length);
-		when(vehicleRequest.width()).thenReturn(width);
-		when(vehicleRequest.height()).thenReturn(height);
-		when(vehicleRequest.maxPayload()).thenReturn(maxPayload);
+		verifyNoInteractions(vehicleRepository);
 	}
 
 	@Test
@@ -159,25 +112,21 @@ class VehicleServiceTest {
 		final int page = 0;
 		final int size = 10;
 
-		final Page<VehiclesEntity> entityPage = new PageImpl<>(
-				vehicleEntities,
+		final Page<Vehicle> domainPage = new PageImpl<>(
+				List.of(existingVehicle),
 				PageRequest.of(page, size, Sort.by("id").ascending()),
-				vehicleEntities.size()
+				1
 		);
 
-		when(vehicleRepository.findAll(any(Pageable.class)))
-				.thenReturn(entityPage);
-
-		when(vehicleMapper.toResponse(vehicleEntity))
-				.thenReturn(vehicleResponse);
+		when(vehicleRepository.findAll(any(Pageable.class))).thenReturn(domainPage);
 
 		final ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
 
 		// when
-		final Page<VehicleResponse> result = vehicleService.getVehicles(page, size);
+		final Page<Vehicle> result = vehicleService.getVehicles(page, size);
 
 		// then
-		assertThat(result.getContent()).containsExactly(vehicleResponse);
+		assertThat(result.getContent()).containsExactly(existingVehicle);
 		assertThat(result.getNumber()).isEqualTo(page);
 		assertThat(result.getSize()).isEqualTo(size);
 		assertThat(result.getTotalElements()).isEqualTo(1);
@@ -188,56 +137,43 @@ class VehicleServiceTest {
 
 		assertThat(capturedPageable.getPageNumber()).isEqualTo(page);
 		assertThat(capturedPageable.getPageSize()).isEqualTo(size);
-		assertThat(capturedPageable.getSort())
-				.isEqualTo(Sort.by("id").ascending());
+		assertThat(capturedPageable.getSort()).isEqualTo(Sort.by("id").ascending());
 
-		verify(vehicleMapper).toResponse(vehicleEntity);
-
-		verifyNoMoreInteractions(vehicleRepository, vehicleMapper);
+		verifyNoMoreInteractions(vehicleRepository);
 	}
 
 	@Test
 	void shouldReturnVehicleById() {
 		// given
-		when(vehicleRepository.findById(vehicleId))
-				.thenReturn(Optional.of(vehicleEntity));
-
-		when(vehicleMapper.toResponse(vehicleEntity))
-				.thenReturn(vehicleResponse);
+		when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(existingVehicle));
 
 		// when
-		final VehicleResponse result = vehicleService.getVehicle(vehicleId);
+		final Vehicle result = vehicleService.getVehicle(vehicleId);
 
 		// then
-		assertThat(result).isEqualTo(vehicleResponse);
+		assertThat(result).isEqualTo(existingVehicle);
 
 		verify(vehicleRepository).findById(vehicleId);
-		verify(vehicleMapper).toResponse(vehicleEntity);
-
-		verifyNoMoreInteractions(vehicleRepository, vehicleMapper);
+		verifyNoMoreInteractions(vehicleRepository);
 	}
 
 	@Test
 	void shouldThrowExceptionWhenVehicleDoesNotExistWhileGettingVehicle() {
 		// given
-		when(vehicleRepository.findById(vehicleId))
-				.thenReturn(Optional.empty());
+		when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.empty());
 
 		// when & then
 		assertThatThrownBy(() -> vehicleService.getVehicle(vehicleId))
 				.isInstanceOf(VehicleNotFoundException.class);
 
 		verify(vehicleRepository).findById(vehicleId);
-
-		verifyNoInteractions(vehicleMapper);
 		verifyNoMoreInteractions(vehicleRepository);
 	}
 
 	@Test
 	void shouldDeleteVehicleById() {
 		// given
-		when(vehicleRepository.existsById(vehicleId))
-				.thenReturn(true);
+		when(vehicleRepository.existsById(vehicleId)).thenReturn(true);
 
 		// when
 		vehicleService.deleteVehicle(vehicleId);
@@ -246,15 +182,13 @@ class VehicleServiceTest {
 		verify(vehicleRepository).existsById(vehicleId);
 		verify(vehicleRepository).deleteById(vehicleId);
 
-		verifyNoInteractions(vehicleMapper);
 		verifyNoMoreInteractions(vehicleRepository);
 	}
 
 	@Test
 	void shouldThrowExceptionWhenVehicleDoesNotExistWhileDeletingVehicle() {
 		// given
-		when(vehicleRepository.existsById(vehicleId))
-				.thenReturn(false);
+		when(vehicleRepository.existsById(vehicleId)).thenReturn(false);
 
 		// when & then
 		assertThatThrownBy(() -> vehicleService.deleteVehicle(vehicleId))
@@ -263,7 +197,6 @@ class VehicleServiceTest {
 		verify(vehicleRepository).existsById(vehicleId);
 		verify(vehicleRepository, never()).deleteById(any());
 
-		verifyNoInteractions(vehicleMapper);
 		verifyNoMoreInteractions(vehicleRepository);
 	}
 }

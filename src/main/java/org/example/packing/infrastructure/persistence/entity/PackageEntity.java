@@ -4,23 +4,32 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PostPersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import org.springframework.data.domain.Persistable;
 import org.example.packing.domain.model.FragilityLevel;
 import org.example.packing.domain.model.ProductCategory;
 
 import java.util.UUID;
 
+/**
+ * The id is assigned by the application ({@code IdGenerator}), not the database.
+ * {@link Persistable} tells Spring Data the entity is new, so {@code save()}
+ * issues a plain INSERT instead of a SELECT + merge.
+ */
 @Entity
 @Table(name = "packages")
-public class PackageEntity {
+public class PackageEntity implements Persistable<UUID> {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
 	@Column(nullable = false, updatable = false)
 	private UUID id;
+
+	@Transient
+	private boolean isNew = true;
 
 	private double length;
 	private double width;
@@ -57,8 +66,20 @@ public class PackageEntity {
 		this.fragility = fragility;
 	}
 
+	@Override
 	public UUID getId() {
 		return id;
+	}
+
+	@Override
+	public boolean isNew() {
+		return isNew;
+	}
+
+	@PostLoad
+	@PostPersist
+	void markNotNew() {
+		isNew = false;
 	}
 
 	public void setId(final UUID id) {

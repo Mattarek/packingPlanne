@@ -1,4 +1,4 @@
-package org.example.packing.infrastructure.persistence.mapper;
+package org.example.packing.application.mapper;
 
 import org.mapstruct.MapperConfig;
 import org.mapstruct.ReportingPolicy;

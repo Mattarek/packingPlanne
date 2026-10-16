@@ -1,6 +1,5 @@
 package org.example.packing.infrastructure.kafka.config;
 
-import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Serializer;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestEvent;
 import org.junit.jupiter.api.Test;
@@ -16,7 +15,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Verifies the actual serialization behavior the bean is built for — see the
@@ -68,10 +66,22 @@ class KafkaRetryTemplateConfigurationTest {
 		assertThat(result).isEqualTo(raw);
 	}
 
+	/**
+	 * O2: a second {@code @RetryableTopic} consumer for a brand-new event type
+	 * must not need any change in this configuration.
+	 */
 	@Test
-	void shouldThrowSerializationExceptionForUnmappedValueType() {
-		assertThatThrownBy(() -> valueSerializer().serialize("some-topic", 42))
-				.isInstanceOf(SerializationException.class);
+	void shouldSerializeAnyOtherEventTypeAsJsonWithoutConfigChange() {
+		final SomeFutureEvent event = new SomeFutureEvent(UUID.randomUUID(), "ORDER_PLACED");
+
+		final byte[] result = valueSerializer().serialize("some-topic", event);
+
+		assertThat(new String(result, StandardCharsets.UTF_8))
+				.contains(event.eventId().toString())
+				.contains("ORDER_PLACED");
+	}
+
+	record SomeFutureEvent(UUID eventId, String eventType) {
 	}
 
 	@Test

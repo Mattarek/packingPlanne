@@ -16,25 +16,5 @@ public record Vehicle(UUID id, String name, Dimensions cargoArea, Weight maxPayl
 		return cargoArea.volume();
 	}
 
-	@Override
-	public boolean equals(final Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (!(o instanceof final Vehicle other)) {
-			return false;
-		}
-		return id.equals(other.id);
-	}
-
-	@Override
-	public int hashCode() {
-		return id.hashCode();
-	}
-
-	@Override
-	public String toString() {
-		return "Vehicle[id=%s, %s, cargo=%s, maxPayload=%s]"
-				.formatted(id, name, cargoArea, maxPayload);
-	}
+	// No equals/hashCode overrides on purpose – see Package.
 }

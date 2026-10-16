@@ -299,18 +299,18 @@ class PackedVehicleTest {
 	}
 
 	@Test
-	void shouldReturnSameValuesFromJavaBeanStyleGetters() {
+	void shouldNotBeUsedWhenNothingIsPlaced() {
+		// when & then
+		assertThat(packedVehicle.isUsed()).isFalse();
+	}
+
+	@Test
+	void shouldBeUsedOnceAPackageIsPlaced() {
 		// given
 		packedVehicle.place(firstPackage, originPosition);
 
 		// when & then
-		assertThat(packedVehicle.getVehicle()).isEqualTo(packedVehicle.vehicle());
-		assertThat(packedVehicle.getPlacedPackages()).isEqualTo(packedVehicle.placedPackages());
-		assertThat(packedVehicle.getCurrentWeight()).isEqualTo(packedVehicle.currentWeight());
-		assertThat(packedVehicle.getRemainingPayload()).isEqualTo(packedVehicle.remainingPayload());
-		assertThat(packedVehicle.getCurrentVolume()).isEqualTo(packedVehicle.currentVolume());
-		assertThat(packedVehicle.getVolumeUtilization()).isEqualTo(packedVehicle.volumeUtilization());
-		assertThat(packedVehicle.getWeightUtilization()).isEqualTo(packedVehicle.weightUtilization());
+		assertThat(packedVehicle.isUsed()).isTrue();
 	}
 
 	@Test

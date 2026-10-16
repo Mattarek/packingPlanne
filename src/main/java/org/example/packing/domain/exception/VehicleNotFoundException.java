@@ -2,7 +2,8 @@ package org.example.packing.domain.exception;
 
 import java.util.UUID;
 
-public class VehicleNotFoundException extends RuntimeException {
+public final class VehicleNotFoundException extends NotFoundException {
+
 	public VehicleNotFoundException(final UUID id) {
 		super("Vehicle not found: " + id);
 	}
