@@ -1,21 +1,20 @@
 package org.example.packing.infrastructure.persistence.adapter;
 
-import org.example.packing.application.port.PackageRepository;
+import org.example.packing.application.port.PageQuery;
+import org.example.packing.application.port.PageResult;
+import org.example.packing.application.port.out.PackageRepository;
 import org.example.packing.domain.model.Package;
 import org.example.packing.infrastructure.persistence.mapper.PackageEntityMapper;
 import org.example.packing.infrastructure.persistence.repository.PackageJpaRepository;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Implements the application's {@link PackageRepository} port with Spring Data JPA.
- * The JPA entity and the full {@code JpaRepository} API stay inside this package.
- */
 @Component
 public class JpaPackageRepositoryAdapter implements PackageRepository {
 
@@ -41,17 +40,16 @@ public class JpaPackageRepositoryAdapter implements PackageRepository {
 	}
 
 	@Override
-	public Page<Package> findAll(final Pageable pageable) {
-		return jpaRepository.findAll(pageable).map(mapper::toDomain);
+	public PageResult<Package> findPage(final PageQuery query) {
+		final Page<Package> page = jpaRepository
+				.findAll(PageRequest.of(query.page(), query.size(), Sort.by("id").ascending()))
+				.map(mapper::toDomain);
+
+		return new PageResult<>(page.getContent(), page.getNumber(), page.getSize(), page.getTotalElements());
 	}
 
 	@Override
-	public boolean existsById(final UUID id) {
-		return jpaRepository.existsById(id);
-	}
-
-	@Override
-	public void deleteById(final UUID id) {
-		jpaRepository.deleteById(id);
+	public boolean deleteById(final UUID id) {
+		return jpaRepository.deletePackageById(id) > 0;
 	}
 }

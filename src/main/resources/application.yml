@@ -56,8 +56,12 @@ spring:
 
     producer:
       client-id: packing-producer
+      properties:
+        max.block.ms: 5000
+        request.timeout.ms: 15000
+        delivery.timeout.ms: 30000
       # No key/value serializer here on purpose: the app's KafkaTemplate is
-      # built by hand in KafkaRetryTemplateConfiguration with explicit
+      # built by hand in KafkaProducerConfiguration with explicit
       # Serializer instances (a DelegatingByTypeSerializer, since one
       # template has to handle both pre-serialized outbox strings and
       # deserialized listener objects). A serializer *class name* property
@@ -67,8 +71,10 @@ spring:
 
 app:
   packing:
+    strategy:
+      ordering: BASE_AREA_DESC
+
     acceptance:
-      # PackageAcceptancePolicy limits (MaxDimensionsRule, MaxWeightRule)
       max-length-cm: 120.0
       max-width-cm: 80.0
       max-height-cm: 80.0
@@ -87,6 +93,9 @@ app:
       relay-interval-ms: 5000
       batch-size: 100
       max-attempts: 5
+      send-timeout: 35s
+      retention: 7d
+      cleanup-interval-ms: 3600000
 
     dead-letter:
       # DeadLetterRetryScheduler: resubmits events parked on a .DLT topic

@@ -1,7 +1,9 @@
 package org.example.packing.application.service;
 
 import org.example.packing.application.command.CreateVehicleCommand;
-import org.example.packing.application.port.VehicleRepository;
+import org.example.packing.application.port.PageQuery;
+import org.example.packing.application.port.PageResult;
+import org.example.packing.application.port.out.VehicleRepository;
 import org.example.packing.domain.exception.VehicleNotFoundException;
 import org.example.packing.domain.model.Dimensions;
 import org.example.packing.domain.model.Vehicle;
@@ -9,14 +11,8 @@ import org.example.packing.domain.model.Weight;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,8 +20,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -107,38 +101,17 @@ class VehicleServiceTest {
 	}
 
 	@Test
-	void shouldReturnPagedVehiclesSortedByIdAscending() {
+	void shouldReturnRequestedPage() {
 		// given
-		final int page = 0;
-		final int size = 10;
-
-		final Page<Vehicle> domainPage = new PageImpl<>(
-				List.of(existingVehicle),
-				PageRequest.of(page, size, Sort.by("id").ascending()),
-				1
-		);
-
-		when(vehicleRepository.findAll(any(Pageable.class))).thenReturn(domainPage);
-
-		final ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+		final PageResult<Vehicle> page = new PageResult<>(List.of(existingVehicle), 0, 10, 1);
+		when(vehicleRepository.findPage(new PageQuery(0, 10))).thenReturn(page);
 
 		// when
-		final Page<Vehicle> result = vehicleService.getVehicles(page, size);
+		final PageResult<Vehicle> result = vehicleService.getVehicles(0, 10);
 
 		// then
-		assertThat(result.getContent()).containsExactly(existingVehicle);
-		assertThat(result.getNumber()).isEqualTo(page);
-		assertThat(result.getSize()).isEqualTo(size);
-		assertThat(result.getTotalElements()).isEqualTo(1);
-
-		verify(vehicleRepository).findAll(pageableCaptor.capture());
-
-		final Pageable capturedPageable = pageableCaptor.getValue();
-
-		assertThat(capturedPageable.getPageNumber()).isEqualTo(page);
-		assertThat(capturedPageable.getPageSize()).isEqualTo(size);
-		assertThat(capturedPageable.getSort()).isEqualTo(Sort.by("id").ascending());
-
+		assertThat(result).isEqualTo(page);
+		verify(vehicleRepository).findPage(new PageQuery(0, 10));
 		verifyNoMoreInteractions(vehicleRepository);
 	}
 
@@ -173,13 +146,12 @@ class VehicleServiceTest {
 	@Test
 	void shouldDeleteVehicleById() {
 		// given
-		when(vehicleRepository.existsById(vehicleId)).thenReturn(true);
+		when(vehicleRepository.deleteById(vehicleId)).thenReturn(true);
 
 		// when
 		vehicleService.deleteVehicle(vehicleId);
 
 		// then
-		verify(vehicleRepository).existsById(vehicleId);
 		verify(vehicleRepository).deleteById(vehicleId);
 
 		verifyNoMoreInteractions(vehicleRepository);
@@ -188,14 +160,13 @@ class VehicleServiceTest {
 	@Test
 	void shouldThrowExceptionWhenVehicleDoesNotExistWhileDeletingVehicle() {
 		// given
-		when(vehicleRepository.existsById(vehicleId)).thenReturn(false);
+		when(vehicleRepository.deleteById(vehicleId)).thenReturn(false);
 
 		// when & then
 		assertThatThrownBy(() -> vehicleService.deleteVehicle(vehicleId))
 				.isInstanceOf(VehicleNotFoundException.class);
 
-		verify(vehicleRepository).existsById(vehicleId);
-		verify(vehicleRepository, never()).deleteById(any());
+		verify(vehicleRepository).deleteById(vehicleId);
 
 		verifyNoMoreInteractions(vehicleRepository);
 	}

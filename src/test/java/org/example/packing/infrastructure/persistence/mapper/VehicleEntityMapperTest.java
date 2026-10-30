@@ -3,7 +3,7 @@ package org.example.packing.infrastructure.persistence.mapper;
 import org.example.packing.domain.model.Dimensions;
 import org.example.packing.domain.model.Vehicle;
 import org.example.packing.domain.model.Weight;
-import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
+import org.example.packing.infrastructure.persistence.entity.VehicleEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
@@ -18,7 +18,7 @@ class VehicleEntityMapperTest {
 	private VehicleEntityMapper mapper;
 
 	private UUID vehicleId;
-	private VehiclesEntity vehicleEntity;
+	private VehicleEntity vehicleEntity;
 	private Vehicle vehicle;
 
 	@BeforeEach
@@ -27,7 +27,7 @@ class VehicleEntityMapperTest {
 
 		vehicleId = UUID.randomUUID();
 
-		vehicleEntity = new VehiclesEntity(vehicleId, "Test vehicle", 100.0, 50.0, 40.0, 1000.0);
+		vehicleEntity = new VehicleEntity(vehicleId, "Test vehicle", 100.0, 50.0, 40.0, 1000.0);
 		vehicle = new Vehicle(vehicleId, "Test vehicle", new Dimensions(100.0, 50.0, 40.0), new Weight(1000.0));
 	}
 
@@ -43,7 +43,7 @@ class VehicleEntityMapperTest {
 	@Test
 	void shouldMapEntityListToDomainList() {
 		// given
-		final VehiclesEntity secondEntity = new VehiclesEntity(
+		final VehicleEntity secondEntity = new VehicleEntity(
 				UUID.randomUUID(), "Second vehicle", 200.0, 80.0, 60.0, 2000.0
 		);
 
@@ -61,7 +61,7 @@ class VehicleEntityMapperTest {
 	@Test
 	void shouldMapDomainToEntityKeepingTheDomainId() {
 		// when
-		final VehiclesEntity result = mapper.toEntity(vehicle);
+		final VehicleEntity result = mapper.toEntity(vehicle);
 
 		// then
 		assertThat(result.getId()).isEqualTo(vehicleId);

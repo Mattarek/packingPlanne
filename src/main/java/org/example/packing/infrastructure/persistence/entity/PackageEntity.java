@@ -9,17 +9,12 @@ import jakarta.persistence.PostLoad;
 import jakarta.persistence.PostPersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
-import org.springframework.data.domain.Persistable;
 import org.example.packing.domain.model.FragilityLevel;
 import org.example.packing.domain.model.ProductCategory;
+import org.springframework.data.domain.Persistable;
 
 import java.util.UUID;
 
-/**
- * The id is assigned by the application ({@code IdGenerator}), not the database.
- * {@link Persistable} tells Spring Data the entity is new, so {@code save()}
- * issues a plain INSERT instead of a SELECT + merge.
- */
 @Entity
 @Table(name = "packages")
 public class PackageEntity implements Persistable<UUID> {
@@ -82,10 +77,6 @@ public class PackageEntity implements Persistable<UUID> {
 		isNew = false;
 	}
 
-	public void setId(final UUID id) {
-		this.id = id;
-	}
-
 	public double getLength() {
 		return length;
 	}
@@ -106,15 +97,7 @@ public class PackageEntity implements Persistable<UUID> {
 		return category;
 	}
 
-	public void setCategory(final ProductCategory category) {
-		this.category = category;
-	}
-
 	public FragilityLevel getFragility() {
 		return fragility;
-	}
-
-	public void setFragility(final FragilityLevel fragility) {
-		this.fragility = fragility;
 	}
 }

@@ -1,16 +1,15 @@
 package org.example.packing.application.service;
 
 import org.example.packing.application.command.CreateVehicleCommand;
-import org.example.packing.application.port.IdGenerator;
-import org.example.packing.application.port.VehicleRepository;
+import org.example.packing.application.port.PageQuery;
+import org.example.packing.application.port.PageResult;
+import org.example.packing.application.port.in.VehicleUseCase;
+import org.example.packing.application.port.out.IdGenerator;
+import org.example.packing.application.port.out.VehicleRepository;
 import org.example.packing.domain.exception.VehicleNotFoundException;
 import org.example.packing.domain.model.Dimensions;
 import org.example.packing.domain.model.Vehicle;
 import org.example.packing.domain.model.Weight;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class VehicleService {
+public class VehicleService implements VehicleUseCase {
 
 	private final VehicleRepository vehicleRepository;
 	private final IdGenerator idGenerator;
@@ -31,9 +30,9 @@ public class VehicleService {
 		this.idGenerator = idGenerator;
 	}
 
+	@Override
 	@Transactional
 	public List<Vehicle> createVehicles(final List<CreateVehicleCommand> commands) {
-		// Building the domain Vehicle enforces its invariants (Dimensions, Weight).
 		final List<Vehicle> vehicles = commands.stream()
 				.map(this::toVehicle)
 				.toList();
@@ -50,29 +49,24 @@ public class VehicleService {
 		);
 	}
 
+	@Override
 	@Transactional(readOnly = true)
-	public Page<Vehicle> getVehicles(final int page, final int size) {
-		final Pageable pageable = PageRequest.of(
-				page,
-				size,
-				Sort.by("id").ascending()
-		);
-
-		return vehicleRepository.findAll(pageable);
+	public PageResult<Vehicle> getVehicles(final int page, final int size) {
+		return vehicleRepository.findPage(new PageQuery(page, size));
 	}
 
+	@Override
 	@Transactional(readOnly = true)
 	public Vehicle getVehicle(final UUID id) {
 		return vehicleRepository.findById(id)
 				.orElseThrow(() -> new VehicleNotFoundException(id));
 	}
 
+	@Override
 	@Transactional
 	public void deleteVehicle(final UUID id) {
-		if (!vehicleRepository.existsById(id)) {
+		if (!vehicleRepository.deleteById(id)) {
 			throw new VehicleNotFoundException(id);
 		}
-
-		vehicleRepository.deleteById(id);
 	}
 }

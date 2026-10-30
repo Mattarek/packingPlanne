@@ -1,5 +1,6 @@
 package org.example.packing.domain.model;
 
+import java.util.Locale;
 import java.util.Objects;
 
 public record Weight(double kilograms) implements Comparable<Weight> {
@@ -29,23 +30,7 @@ public record Weight(double kilograms) implements Comparable<Weight> {
 	}
 
 	@Override
-	public boolean equals(final Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (!(o instanceof Weight(final double kilograms1))) {
-			return false;
-		}
-		return Double.compare(kilograms, kilograms1) == 0;
-	}
-
-	@Override
-	public int hashCode() {
-		return Double.hashCode(kilograms);
-	}
-
-	@Override
 	public String toString() {
-		return "%.2f kg".formatted(kilograms);
+		return String.format(Locale.ROOT, "%.2f kg", kilograms);
 	}
 }

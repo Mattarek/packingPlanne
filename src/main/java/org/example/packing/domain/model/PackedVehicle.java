@@ -3,6 +3,7 @@ package org.example.packing.domain.model;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public final class PackedVehicle {
@@ -44,13 +45,6 @@ public final class PackedVehicle {
 		return cargo == 0 ? 0.0 : currentVolume() / cargo;
 	}
 
-	/**
-	 * A vehicle counts as used once it carries at least one package.
-	 */
-	public boolean isUsed() {
-		return !placedPackages.isEmpty();
-	}
-
 	public double weightUtilization() {
 		final double max = vehicle.maxPayload().kilograms();
 		return max == 0 ? 0.0 : currentWeight.kilograms() / max;
@@ -88,14 +82,28 @@ public final class PackedVehicle {
 		currentWeight = currentWeight.add(pkg.weight());
 	}
 
+	public PackedVehicleSnapshot snapshot() {
+		return new PackedVehicleSnapshot(
+				vehicle,
+				placedPackages,
+				currentWeight,
+				currentVolume(),
+				remainingPayload(),
+				volumeUtilization(),
+				weightUtilization()
+		);
+	}
+
 	@Override
 	public String toString() {
-		return "PackedVehicle[%s, packed=%d, weight=%s/%s, vol=%.1f%%]"
-				.formatted(
-						vehicle.id(),
-						placedPackages.size(),
-						currentWeight,
-						vehicle.maxPayload(),
-						volumeUtilization() * 100);
+		return String.format(
+				Locale.ROOT,
+				"PackedVehicle[%s, packed=%d, weight=%s/%s, vol=%.1f%%]",
+				vehicle.id(),
+				placedPackages.size(),
+				currentWeight,
+				vehicle.maxPayload(),
+				volumeUtilization() * 100
+		);
 	}
 }

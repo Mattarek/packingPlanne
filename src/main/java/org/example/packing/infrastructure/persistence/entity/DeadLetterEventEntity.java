@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.example.packing.infrastructure.messaging.deadletter.DeadLetterEventStatus;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -98,7 +99,11 @@ public class DeadLetterEventEntity {
 			final String topicName,
 			final String payload,
 			final String reason,
-			final Instant failedAt
+			final DeadLetterEventStatus status,
+			final int attempts,
+			final Instant firstFailedAt,
+			final Instant lastFailedAt,
+			final Instant lastRetriedAt
 	) {
 		this.id = id;
 		this.eventId = eventId;
@@ -106,34 +111,11 @@ public class DeadLetterEventEntity {
 		this.topicName = topicName;
 		this.payload = payload;
 		this.reason = reason;
-		status = DeadLetterEventStatus.PENDING_RETRY;
-		attempts = 0;
-		firstFailedAt = failedAt;
-		lastFailedAt = failedAt;
-	}
-
-	/**
-	 * Called every time this same event lands back on the DLT (the initial
-	 * failure, or another one after an automatic resubmission didn't stick).
-	 * Once {@code maxAttempts} is reached, retrying automatically stops and
-	 * the event is left for a human to look at.
-	 */
-	public void recordFailure(
-			final String failureReason,
-			final int maxAttempts,
-			final Instant failedAt
-	) {
-		reason = failureReason;
-		lastFailedAt = failedAt;
-		attempts++;
-		status = attempts >= maxAttempts
-				? DeadLetterEventStatus.ABANDONED
-				: DeadLetterEventStatus.PENDING_RETRY;
-	}
-
-	public void markResubmitted(final Instant retriedAt) {
-		status = DeadLetterEventStatus.RESUBMITTED;
-		lastRetriedAt = retriedAt;
+		this.status = status;
+		this.attempts = attempts;
+		this.firstFailedAt = firstFailedAt;
+		this.lastFailedAt = lastFailedAt;
+		this.lastRetriedAt = lastRetriedAt;
 	}
 
 	public UUID getId() {

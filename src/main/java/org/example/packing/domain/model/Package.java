@@ -27,8 +27,4 @@ public record Package(UUID id, Dimensions dimensions, Weight weight, ProductCate
 	public double volume() {
 		return dimensions.volume();
 	}
-
-	// No equals/hashCode/toString overrides on purpose: a record promises value
-	// semantics (equal components => equal objects). Code that needs identity
-	// compares id() explicitly.
 }

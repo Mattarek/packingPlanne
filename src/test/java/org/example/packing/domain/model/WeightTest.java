@@ -215,6 +215,6 @@ class WeightTest {
 		final String result = weight.toString();
 
 		// then
-		assertThat(result).isEqualTo("10,50 kg");
+		assertThat(result).isEqualTo("10.50 kg");
 	}
 }

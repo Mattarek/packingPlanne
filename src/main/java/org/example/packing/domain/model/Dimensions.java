@@ -31,19 +31,6 @@ public record Dimensions(double length, double width, double height) {
 	}
 
 	@Override
-	public boolean equals(final Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (!(o instanceof Dimensions(final double length1, final double width1, final double height1))) {
-			return false;
-		}
-		return Double.compare(length, length1) == 0
-				&& Double.compare(width, width1) == 0
-				&& Double.compare(height, height1) == 0;
-	}
-
-	@Override
 	public String toString() {
 		return String.format(
 				Locale.ROOT,

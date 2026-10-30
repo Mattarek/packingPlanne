@@ -12,22 +12,22 @@ public record PackingStatistics(
 ) {
 
 	public static PackingStatistics of(
-			final List<PackedVehicle> packedVehicles,
+			final List<PackedVehicleSnapshot> packedVehicles,
 			final List<Package> unpackedPackages
 	) {
 		Objects.requireNonNull(packedVehicles, "packedVehicles must not be null");
 		Objects.requireNonNull(unpackedPackages, "unpackedPackages must not be null");
 
-		final List<PackedVehicle> usedVehicles = packedVehicles.stream()
-				.filter(PackedVehicle::isUsed)
+		final List<PackedVehicleSnapshot> usedVehicles = packedVehicles.stream()
+				.filter(PackedVehicleSnapshot::isUsed)
 				.toList();
 
 		return new PackingStatistics(
 				usedVehicles.stream().mapToInt(v -> v.placedPackages().size()).sum(),
 				usedVehicles.size(),
 				unpackedPackages.isEmpty(),
-				usedVehicles.stream().mapToDouble(PackedVehicle::volumeUtilization).average().orElse(0.0),
-				usedVehicles.stream().mapToDouble(PackedVehicle::weightUtilization).average().orElse(0.0)
+				usedVehicles.stream().mapToDouble(PackedVehicleSnapshot::volumeUtilization).average().orElse(0.0),
+				usedVehicles.stream().mapToDouble(PackedVehicleSnapshot::weightUtilization).average().orElse(0.0)
 		);
 	}
 }

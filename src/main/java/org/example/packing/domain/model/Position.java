@@ -1,5 +1,7 @@
 package org.example.packing.domain.model;
 
+import java.util.Locale;
+
 public record Position(double x, double y, double z) {
 
 	public static final Position ORIGIN = new Position(0, 0, 0);
@@ -13,20 +15,7 @@ public record Position(double x, double y, double z) {
 	}
 
 	@Override
-	public boolean equals(final Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (!(o instanceof Position(final double x1, final double y1, final double z1))) {
-			return false;
-		}
-		return Double.compare(x, x1) == 0
-				&& Double.compare(y, y1) == 0
-				&& Double.compare(z, z1) == 0;
-	}
-
-	@Override
 	public String toString() {
-		return "(%.1f, %.1f, %.1f)".formatted(x, y, z);
+		return String.format(Locale.ROOT, "(%.1f, %.1f, %.1f)", x, y, z);
 	}
 }

@@ -6,8 +6,8 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.example.packing.infrastructure.kafka.support.KafkaContainerHandler;
 import org.example.packing.infrastructure.kafka.support.KafkaPostgresContainersInitializer;
+import org.example.packing.infrastructure.messaging.outbox.OutboxEventStatus;
 import org.example.packing.infrastructure.persistence.entity.OutboxEventEntity;
-import org.example.packing.infrastructure.persistence.entity.OutboxEventStatus;
 import org.example.packing.infrastructure.persistence.repository.OutboxEventRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -44,7 +44,7 @@ class OutboxEventRelayIntegrationTest {
 	private OutboxEventRepository outboxEventRepository;
 
 	// Raw type on purpose: the app's KafkaTemplate bean is declared as
-	// KafkaTemplate<String, Object> (see KafkaRetryTemplateConfiguration),
+	// KafkaTemplate<String, Object> (see KafkaProducerConfiguration),
 	// and @MockitoSpyBean matches beans by exact generic type —
 	// KafkaTemplate<String, String> would not resolve to any bean and fail
 	// context startup.

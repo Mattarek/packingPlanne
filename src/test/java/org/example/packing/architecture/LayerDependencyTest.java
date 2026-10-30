@@ -7,15 +7,6 @@ import com.tngtech.archunit.lang.ArchRule;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
-/**
- * Dependency rules from the SOLID review, checked on every build so DIP
- * violations can't slip back in unnoticed:
- * <ul>
- *   <li>the domain depends on nothing but itself and the JDK,</li>
- *   <li>the application depends on the domain and on its own ports – never on
- *       infrastructure, JPA or Kafka.</li>
- * </ul>
- */
 @AnalyzeClasses(packages = "org.example.packing", importOptions = ImportOption.DoNotIncludeTests.class)
 class LayerDependencyTest {
 
@@ -24,8 +15,7 @@ class LayerDependencyTest {
 			.that().resideInAPackage("..packing.domain..")
 			.should().dependOnClassesThat().resideInAnyPackage(
 					"..packing.application..",
-					"..packing.infrastructure..",
-					"..packing.config.."
+					"..packing.infrastructure.."
 			)
 			.because("the domain is the innermost layer (D1, O1)");
 
@@ -34,10 +24,16 @@ class LayerDependencyTest {
 			.that().resideInAPackage("..packing.domain..")
 			.should().dependOnClassesThat().resideInAnyPackage(
 					"org.springframework..",
-					"jakarta.persistence..",
-					"org.apache.kafka.."
+					"jakarta..",
+					"javax..",
+					"org.hibernate..",
+					"org.apache.kafka..",
+					"org.mapstruct..",
+					"com.fasterxml.jackson..",
+					"tools.jackson..",
+					"org.slf4j.."
 			)
-			.because("business rules must not depend on frameworks (O1: GlobalExceptionHandler lived in domain)");
+			.because("business rules must not depend on frameworks (O1, A3)");
 
 	@ArchTest
 	static final ArchRule applicationDoesNotDependOnInfrastructure = noClasses()
@@ -46,13 +42,46 @@ class LayerDependencyTest {
 			.because("the application talks to infrastructure only through its ports (D1, D2, I1)");
 
 	@ArchTest
-	static final ArchRule applicationDoesNotUsePersistenceOrMessagingApis = noClasses()
+	static final ArchRule applicationUsesOnlyDependencyInjectionAndTransactions = noClasses()
 			.that().resideInAPackage("..packing.application..")
 			.should().dependOnClassesThat().resideInAnyPackage(
 					"jakarta.persistence..",
-					"org.springframework.data.jpa..",
+					"jakarta.servlet..",
+					"jakarta.validation..",
+					"org.springframework.data..",
+					"org.springframework.web..",
+					"org.springframework.http..",
 					"org.springframework.kafka..",
-					"org.apache.kafka.."
+					"org.hibernate..",
+					"org.apache.kafka..",
+					"org.mapstruct..",
+					"com.fasterxml.jackson..",
+					"tools.jackson.."
 			)
-			.because("JPA and Kafka are infrastructure details (D1, S1)");
+			.because("web, persistence, messaging and mapping are infrastructure details (A1, D1, S1)");
+
+	@ArchTest
+	static final ArchRule inboundAdaptersUseInboundPorts = noClasses()
+			.that().resideInAnyPackage(
+					"..packing.infrastructure.web..",
+					"..packing.infrastructure.kafka.."
+			)
+			.should().dependOnClassesThat().resideInAPackage("..packing.application.service..")
+			.because("both sides of the hexagon go through ports (A5)");
+
+	@ArchTest
+	static final ArchRule messagingIsTechnologyAgnostic = noClasses()
+			.that().resideInAPackage("..packing.infrastructure.messaging..")
+			.should().dependOnClassesThat().resideInAnyPackage(
+					"jakarta.persistence..",
+					"org.hibernate..",
+					"org.springframework.data..",
+					"org.springframework.kafka..",
+					"org.apache.kafka..",
+					"tools.jackson..",
+					"..packing.infrastructure.persistence..",
+					"..packing.infrastructure.kafka..",
+					"..packing.infrastructure.serialization.."
+			)
+			.because("outbox, inbox and dead-letter logic depends only on its own ports");
 }

@@ -21,7 +21,7 @@ class PackingStatisticsTest {
 		final PackedVehicle empty = new PackedVehicle(vehicle);
 
 		// when
-		final PackingStatistics stats = PackingStatistics.of(List.of(used, empty), List.of());
+		final PackingStatistics stats = PackingStatistics.of(List.of(used.snapshot(), empty.snapshot()), List.of());
 
 		// then
 		assertThat(stats.packedPackagesCount()).isEqualTo(1);
@@ -45,5 +45,21 @@ class PackingStatisticsTest {
 
 	private static Package pkg(final double edge, final double kilograms) {
 		return new Package(UUID.randomUUID(), new Dimensions(edge, edge, edge), new Weight(kilograms));
+	}
+
+	@Test
+	void snapshotShouldNotChangeWhenTheVehicleIsPackedFurther() {
+		// given
+		final PackedVehicle packed = new PackedVehicle(vehicle);
+		packed.place(pkg(10.0, 1.0), Position.ORIGIN);
+		final PackedVehicleSnapshot snapshot = packed.snapshot();
+
+		// when
+		packed.place(pkg(10.0, 1.0), new Position(10.0, 0.0, 0.0));
+
+		// then
+		assertThat(snapshot.placedPackages()).hasSize(1);
+		assertThat(snapshot.currentWeight()).isEqualTo(new Weight(1.0));
+		assertThat(packed.placedPackages()).hasSize(2);
 	}
 }

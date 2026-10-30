@@ -7,10 +7,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Set;
 
-/**
- * Bean Validation of an incoming event. A malformed event will never succeed,
- * so it is rejected as non-retryable.
- */
 @Component
 public class KafkaEventValidator {
 

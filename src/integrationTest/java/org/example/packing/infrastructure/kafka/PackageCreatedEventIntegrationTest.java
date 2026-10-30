@@ -5,14 +5,14 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.example.packing.application.command.CreatePackageCommand;
-import org.example.packing.application.service.PackageService;
+import org.example.packing.application.port.in.PackageUseCase;
 import org.example.packing.domain.model.FragilityLevel;
 import org.example.packing.domain.model.Package;
 import org.example.packing.domain.model.ProductCategory;
 import org.example.packing.infrastructure.kafka.support.KafkaContainerHandler;
 import org.example.packing.infrastructure.kafka.support.KafkaPostgresContainersInitializer;
+import org.example.packing.infrastructure.messaging.outbox.OutboxEventStatus;
 import org.example.packing.infrastructure.persistence.entity.OutboxEventEntity;
-import org.example.packing.infrastructure.persistence.entity.OutboxEventStatus;
 import org.example.packing.infrastructure.persistence.repository.OutboxEventRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +32,7 @@ import static org.awaitility.Awaitility.await;
 
 /**
  * End-to-end proof that the producer side is actually wired up: creating
- * packages through {@link PackageService} (the same entry point used by both
+ * packages through {@link PackageUseCase} (the same entry point used by both
  * {@code PackageController} and {@code PackageCreateRequestProcessor}) writes
  * an outbox row, and the already-existing {@code OutboxEventRelay} — running
  * against a real Kafka broker here — picks it up and publishes it to the
@@ -46,7 +46,7 @@ class PackageCreatedEventIntegrationTest {
 	private static final String TOPIC = "package-created-events";
 
 	@Autowired
-	private PackageService packageService;
+	private PackageUseCase packageUseCase;
 
 	@Autowired
 	private OutboxEventRepository outboxEventRepository;
@@ -60,7 +60,7 @@ class PackageCreatedEventIntegrationTest {
 		);
 
 		// when
-		final List<Package> created = packageService.createPackages(List.of(command));
+		final List<Package> created = packageUseCase.createPackages(List.of(command));
 		final UUID packageId = created.get(0).id();
 
 		// then: outbox row for this package eventually gets published

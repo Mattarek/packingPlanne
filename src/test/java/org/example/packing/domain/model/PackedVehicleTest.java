@@ -299,21 +299,6 @@ class PackedVehicleTest {
 	}
 
 	@Test
-	void shouldNotBeUsedWhenNothingIsPlaced() {
-		// when & then
-		assertThat(packedVehicle.isUsed()).isFalse();
-	}
-
-	@Test
-	void shouldBeUsedOnceAPackageIsPlaced() {
-		// given
-		packedVehicle.place(firstPackage, originPosition);
-
-		// when & then
-		assertThat(packedVehicle.isUsed()).isTrue();
-	}
-
-	@Test
 	void shouldReturnFormattedString() {
 		// given
 		packedVehicle.place(firstPackage, originPosition);

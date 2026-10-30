@@ -8,7 +8,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.example.packing.application.service.PackageService;
+import org.example.packing.application.port.in.PackageUseCase;
 import org.example.packing.infrastructure.kafka.support.KafkaContainerHandler;
 import org.example.packing.infrastructure.kafka.support.KafkaPostgresContainersInitializer;
 import org.junit.jupiter.api.AfterEach;
@@ -49,11 +49,11 @@ class PackageCreateRequestConsumerIntegrationTest {
 	private static final String DLT_TOPIC = TOPIC + ".DLT";
 
 	@MockitoSpyBean
-	private PackageService packageService;
+	private PackageUseCase packageUseCase;
 
 	@AfterEach
 	void resetSpy() {
-		Mockito.reset(packageService);
+		Mockito.reset(packageUseCase);
 	}
 
 	@Test
@@ -86,7 +86,7 @@ class PackageCreateRequestConsumerIntegrationTest {
 				assertThat(totalPackages()).isEqualTo(before + 2)
 		);
 
-		verify(packageService, Mockito.timeout(5_000).times(1))
+		verify(packageUseCase, Mockito.timeout(5_000).times(1))
 				.createPackages(any());
 	}
 
@@ -105,7 +105,7 @@ class PackageCreateRequestConsumerIntegrationTest {
 			}
 
 			return invocation.callRealMethod();
-		}).when(packageService).createPackages(any());
+		}).when(packageUseCase).createPackages(any());
 
 		// when
 		send(validMessage(eventId));
@@ -125,7 +125,7 @@ class PackageCreateRequestConsumerIntegrationTest {
 				assertThat(totalPackages()).isEqualTo(before + 2)
 		);
 
-		verify(packageService, Mockito.timeout(5_000).times(2))
+		verify(packageUseCase, Mockito.timeout(5_000).times(2))
 				.createPackages(any());
 	}
 
@@ -189,7 +189,7 @@ class PackageCreateRequestConsumerIntegrationTest {
 
 		assertThat(dltRecords).isNotEmpty();
 		assertThat(totalPackages()).isEqualTo(before);
-		verify(packageService, Mockito.timeout(5_000).times(0))
+		verify(packageUseCase, Mockito.timeout(5_000).times(0))
 				.createPackages(any());
 	}
 
@@ -281,7 +281,7 @@ class PackageCreateRequestConsumerIntegrationTest {
 
 		doThrow(new TransientDataAccessResourceException(
 				"Simulated persistent transient database failure"
-		)).when(packageService).createPackages(any());
+		)).when(packageUseCase).createPackages(any());
 
 		// when
 		send(validMessage(eventId));
@@ -300,7 +300,7 @@ class PackageCreateRequestConsumerIntegrationTest {
 	}
 
 	private long totalPackages() {
-		return packageService.getPackages(0, 1).getTotalElements();
+		return packageUseCase.getPackages(0, 1).totalElements();
 	}
 
 	private String validMessage(final UUID eventId) {

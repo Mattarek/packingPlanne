@@ -3,11 +3,6 @@ package org.example.packing.infrastructure.kafka.event;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
-/**
- * Part of the external Kafka contract – category and fragility are plain wire
- * values, translated to domain enums by {@link EventEnumMapper}, so renaming a
- * domain enum constant cannot silently change the message format.
- */
 public record PackageCreateRequestItem(
 		@Positive(message = "Length must be positive.")
 		double length,

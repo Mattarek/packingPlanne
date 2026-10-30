@@ -1,12 +1,14 @@
 package org.example.packing.infrastructure.persistence.repository;
 
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.QueryHint;
+import org.example.packing.infrastructure.messaging.deadletter.DeadLetterEventStatus;
 import org.example.packing.infrastructure.persistence.entity.DeadLetterEventEntity;
-import org.example.packing.infrastructure.persistence.entity.DeadLetterEventStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -20,13 +22,14 @@ public interface DeadLetterEventRepository
 	Optional<DeadLetterEventEntity> findByEventId(UUID eventId);
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
 	@Query("""
 			select event
 			from DeadLetterEventEntity event
 			where event.status = :status
 			order by event.lastFailedAt asc
 			""")
-	List<DeadLetterEventEntity> findNextBatch(
+	List<DeadLetterEventEntity> findNextBatchSkippingLocked(
 			DeadLetterEventStatus status,
 			Pageable pageable
 	);

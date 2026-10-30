@@ -1,7 +1,7 @@
 package org.example.packing.infrastructure.kafka.handler;
 
 import org.example.packing.application.command.CreatePackageCommand;
-import org.example.packing.application.service.PackageService;
+import org.example.packing.application.port.in.PackageUseCase;
 import org.example.packing.domain.model.Package;
 import org.example.packing.infrastructure.kafka.event.EventEnumMapper;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestEvent;
@@ -17,10 +17,10 @@ public class PackageCreateRequestV1Handler implements PackageCreateRequestHandle
 
 	private static final Logger log = LoggerFactory.getLogger(PackageCreateRequestV1Handler.class);
 
-	private final PackageService packageService;
+	private final PackageUseCase packageUseCase;
 
-	public PackageCreateRequestV1Handler(final PackageService packageService) {
-		this.packageService = packageService;
+	public PackageCreateRequestV1Handler(final PackageUseCase packageUseCase) {
+		this.packageUseCase = packageUseCase;
 	}
 
 	@Override
@@ -39,7 +39,7 @@ public class PackageCreateRequestV1Handler implements PackageCreateRequestHandle
 				.map(this::toCommand)
 				.toList();
 
-		final List<Package> created = packageService.createPackages(commands);
+		final List<Package> created = packageUseCase.createPackages(commands);
 
 		log.info(
 				"Package create event processed: eventId={}, createdPackages={}",

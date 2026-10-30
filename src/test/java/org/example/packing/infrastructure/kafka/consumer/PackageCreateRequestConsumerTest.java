@@ -1,7 +1,8 @@
 package org.example.packing.infrastructure.kafka.consumer;
 
-import org.example.packing.infrastructure.kafka.deadletter.DeadLetterRecorder;
+import org.example.packing.infrastructure.kafka.config.KafkaTopicsProperties;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestEvent;
+import org.example.packing.infrastructure.messaging.deadletter.DeadLetterRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,7 +34,7 @@ class PackageCreateRequestConsumerTest {
 		consumer = new PackageCreateRequestConsumer(
 				processor,
 				deadLetterRecorder,
-				"package-create-requests"
+				new KafkaTopicsProperties(3, "package-create-requests", "package-created-events")
 		);
 	}
 

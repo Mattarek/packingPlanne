@@ -1,11 +1,18 @@
 package org.example.packing.infrastructure.persistence.repository;
 
-import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
+import org.example.packing.infrastructure.persistence.entity.VehicleEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
 
 @Repository
-public interface VehicleJpaRepository extends JpaRepository<VehiclesEntity, UUID> {
+public interface VehicleJpaRepository extends JpaRepository<VehicleEntity, UUID> {
+
+	@Modifying
+	@Query("delete from VehicleEntity entity where entity.id = :id")
+	int deleteVehicleById(@Param("id") UUID id);
 }

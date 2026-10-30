@@ -52,14 +52,16 @@ class PackageAcceptancePolicyTest {
 	}
 
 	@Test
-	void shouldAcceptPackageWhoseDimensionsFitTheEnvelopeWhenRotated() {
-		// given: same volume/shape as the max envelope, just relabeled axes
+	void shouldRejectPackageThatFitsTheEnvelopeOnlyWhenRotated() {
+		// given
 		final Dimensions rotated = new Dimensions(80.0, 120.0, 80.0);
 
 		// when & then
-		assertThatCode(() -> policy.validate(
+		assertThatThrownBy(() -> policy.validate(
 				pkg(rotated, ACCEPTED_WEIGHT, ProductCategory.STANDARD, FragilityLevel.STANDARD)
-		)).doesNotThrowAnyException();
+		))
+				.isInstanceOf(PackageNotAcceptedException.class)
+				.hasMessageContaining("exceed the maximum accepted dimensions");
 	}
 
 	@Test
@@ -105,7 +107,7 @@ class PackageAcceptancePolicyTest {
 
 	@Test
 	void shouldReportFirstViolatedRuleInConfiguredOrder() {
-		// given: violates both the weight and the category rule
+		// given
 		final Package heavyHazardous = pkg(
 				ACCEPTED_DIMENSIONS, new Weight(31.0), ProductCategory.HAZARDOUS_MATERIAL, FragilityLevel.STANDARD
 		);
@@ -117,7 +119,7 @@ class PackageAcceptancePolicyTest {
 
 	@Test
 	void shouldApplyLimitsGivenAtConstructionInsteadOfHardCodedOnes() {
-		// given: a stricter environment
+		// given
 		final PackageAcceptancePolicy strict = new PackageAcceptancePolicy(List.of(
 				new MaxWeightRule(new Weight(5.0))
 		));
@@ -130,7 +132,7 @@ class PackageAcceptancePolicyTest {
 
 	@Test
 	void shouldApplyNewRuleWithoutChangingThePolicy() {
-		// given: OCP – "FOOD max 20 kg" is just another rule
+		// given
 		final PackageAcceptanceRule foodMax20Kg = pkg -> pkg.category() == ProductCategory.FOOD
 				&& !pkg.weight().isLessThanOrEqualTo(new Weight(20.0))
 				? Optional.of("food heavier than 20 kg")

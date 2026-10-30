@@ -121,8 +121,6 @@ class PackageTest {
 		assertThat(result).isEqualTo(6000.0);
 	}
 
-	// L1: a record promises value semantics – equal components <=> equal objects.
-
 	@Test
 	void shouldBeEqualWhenAllComponentsAreEqual() {
 		// given

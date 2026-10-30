@@ -2,7 +2,7 @@ package org.example.packing.infrastructure.kafka.consumer;
 
 import jakarta.validation.Validation;
 import org.example.packing.application.command.CreatePackageCommand;
-import org.example.packing.application.service.PackageService;
+import org.example.packing.application.port.in.PackageUseCase;
 import org.example.packing.domain.exception.PackageNotAcceptedException;
 import org.example.packing.domain.model.FragilityLevel;
 import org.example.packing.domain.model.ProductCategory;
@@ -14,8 +14,8 @@ import org.example.packing.infrastructure.kafka.exception.RetryableKafkaProcessi
 import org.example.packing.infrastructure.kafka.handler.PackageCreateRequestHandler;
 import org.example.packing.infrastructure.kafka.handler.PackageCreateRequestHandlerRegistry;
 import org.example.packing.infrastructure.kafka.handler.PackageCreateRequestV1Handler;
-import org.example.packing.infrastructure.kafka.inbox.InboxDeduplicator;
-import org.example.packing.infrastructure.persistence.repository.InboxEventRepository;
+import org.example.packing.infrastructure.messaging.inbox.InboxDeduplicator;
+import org.example.packing.infrastructure.messaging.inbox.InboxStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,28 +41,22 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-/**
- * The processor wired from its real collaborators (validator, handler registry,
- * inbox deduplicator, exception translator); only the use case and the inbox
- * table are mocked. Complements the end-to-end Kafka scenarios in
- * {@code PackageCreateRequestConsumerIntegrationTest}.
- */
 @ExtendWith(MockitoExtension.class)
 class PackageCreateRequestProcessorTest {
 
 	private static final String EVENT_TYPE = "PACKAGE_CREATE_REQUESTED";
 
 	@Mock
-	private PackageService packageService;
+	private PackageUseCase packageUseCase;
 
 	@Mock
-	private InboxEventRepository inboxEventRepository;
+	private InboxStore inboxStore;
 
 	private PackageCreateRequestProcessor processor;
 
 	@BeforeEach
 	void setUp() {
-		processor = processorWith(List.of(new PackageCreateRequestV1Handler(packageService)));
+		processor = processorWith(List.of(new PackageCreateRequestV1Handler(packageUseCase)));
 	}
 
 	private PackageCreateRequestProcessor processorWith(final List<PackageCreateRequestHandler> handlers) {
@@ -70,7 +64,7 @@ class PackageCreateRequestProcessorTest {
 				new KafkaEventValidator(Validation.buildDefaultValidatorFactory().getValidator()),
 				new PackageCreateRequestHandlerRegistry(handlers),
 				new InboxDeduplicator(
-						inboxEventRepository,
+						inboxStore,
 						UUID::randomUUID,
 						Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC)
 				),
@@ -79,11 +73,11 @@ class PackageCreateRequestProcessorTest {
 	}
 
 	@Test
-	void shouldRejectNullEventWithoutTouchingInboxOrPackageService() {
+	void shouldRejectNullEventWithoutTouchingInboxOrPackageUseCase() {
 		assertThatThrownBy(() -> processor.process(null))
 				.isInstanceOf(NonRetryableKafkaProcessingException.class);
 
-		verifyNoInteractions(inboxEventRepository, packageService);
+		verifyNoInteractions(inboxStore, packageUseCase);
 	}
 
 	@Test
@@ -93,7 +87,7 @@ class PackageCreateRequestProcessorTest {
 		assertThatThrownBy(() -> processor.process(event))
 				.isInstanceOf(NonRetryableKafkaProcessingException.class);
 
-		verifyNoInteractions(inboxEventRepository, packageService);
+		verifyNoInteractions(inboxStore, packageUseCase);
 	}
 
 	@Test
@@ -104,7 +98,7 @@ class PackageCreateRequestProcessorTest {
 				.isInstanceOf(NonRetryableKafkaProcessingException.class)
 				.hasMessageContaining("Unsupported event type");
 
-		verifyNoInteractions(inboxEventRepository, packageService);
+		verifyNoInteractions(inboxStore, packageUseCase);
 	}
 
 	@Test
@@ -115,12 +109,12 @@ class PackageCreateRequestProcessorTest {
 				.isInstanceOf(NonRetryableKafkaProcessingException.class)
 				.hasMessageContaining("Unsupported event version");
 
-		verifyNoInteractions(inboxEventRepository, packageService);
+		verifyNoInteractions(inboxStore, packageUseCase);
 	}
 
 	@Test
 	void shouldRouteNewVersionToItsOwnHandlerWithoutChangingTheProcessor() {
-		// given: OCP – version 2 is just one more handler
+		// given
 		final List<PackageCreateRequestEvent> handledByV2 = new ArrayList<>();
 		final PackageCreateRequestHandler v2 = new PackageCreateRequestHandler() {
 			@Override
@@ -139,42 +133,42 @@ class PackageCreateRequestProcessorTest {
 			}
 		};
 		final PackageCreateRequestProcessor withV2 = processorWith(List.of(
-				new PackageCreateRequestV1Handler(packageService),
+				new PackageCreateRequestV1Handler(packageUseCase),
 				v2
 		));
 		final PackageCreateRequestEvent event = event(EVENT_TYPE, 2, validItem());
 
-		when(inboxEventRepository.insertIgnoringDuplicate(any(), any(), anyString(), any())).thenReturn(1);
+		when(inboxStore.registerIfAbsent(any(), any(), anyString(), any())).thenReturn(true);
 
 		// when
 		withV2.process(event);
 
 		// then
 		assertThat(handledByV2).containsExactly(event);
-		verifyNoInteractions(packageService);
+		verifyNoInteractions(packageUseCase);
 	}
 
 	@Test
 	void shouldIgnoreDuplicateEventWithoutCreatingPackages() {
 		final PackageCreateRequestEvent event = event(EVENT_TYPE, 1, validItem());
 
-		when(inboxEventRepository.insertIgnoringDuplicate(any(), any(), anyString(), any())).thenReturn(0);
+		when(inboxStore.registerIfAbsent(any(), any(), anyString(), any())).thenReturn(false);
 
 		processor.process(event);
 
-		verify(packageService, never()).createPackages(any());
+		verify(packageUseCase, never()).createPackages(any());
 	}
 
 	@Test
 	void shouldCreatePackagesForNewEvent() {
 		final PackageCreateRequestEvent event = event(EVENT_TYPE, 1, item(10.0, "FOOD", "FRAGILE"));
 
-		when(inboxEventRepository.insertIgnoringDuplicate(any(), any(), anyString(), any())).thenReturn(1);
+		when(inboxStore.registerIfAbsent(any(), any(), anyString(), any())).thenReturn(true);
 
 		processor.process(event);
 
 		final ArgumentCaptor<List<CreatePackageCommand>> captor = ArgumentCaptor.captor();
-		verify(packageService).createPackages(captor.capture());
+		verify(packageUseCase).createPackages(captor.capture());
 
 		assertThat(captor.getValue()).containsExactly(new CreatePackageCommand(
 				10.0, 20.0, 30.0, 5.5, ProductCategory.FOOD, FragilityLevel.FRAGILE
@@ -185,47 +179,47 @@ class PackageCreateRequestProcessorTest {
 	void shouldRejectUnknownWireCategoryAsNonRetryable() {
 		final PackageCreateRequestEvent event = event(EVENT_TYPE, 1, item(10.0, "SPACESHIPS", "STANDARD"));
 
-		when(inboxEventRepository.insertIgnoringDuplicate(any(), any(), anyString(), any())).thenReturn(1);
+		when(inboxStore.registerIfAbsent(any(), any(), anyString(), any())).thenReturn(true);
 
 		assertThatThrownBy(() -> processor.process(event))
 				.isInstanceOf(NonRetryableKafkaProcessingException.class)
 				.hasMessageContaining("SPACESHIPS");
 
-		verifyNoInteractions(packageService);
+		verifyNoInteractions(packageUseCase);
 	}
 
 	@Test
 	void shouldMapTransientErrorOnInboxInsertToRetryable() {
 		final PackageCreateRequestEvent event = event(EVENT_TYPE, 1, validItem());
 
-		when(inboxEventRepository.insertIgnoringDuplicate(any(), any(), anyString(), any()))
+		when(inboxStore.registerIfAbsent(any(), any(), anyString(), any()))
 				.thenThrow(new TransientDataAccessResourceException("db hiccup"));
 
 		assertThatThrownBy(() -> processor.process(event))
 				.isInstanceOf(RetryableKafkaProcessingException.class);
 
-		verifyNoInteractions(packageService);
+		verifyNoInteractions(packageUseCase);
 	}
 
 	@Test
 	void shouldMapDataIntegrityViolationOnInboxInsertToNonRetryable() {
 		final PackageCreateRequestEvent event = event(EVENT_TYPE, 1, validItem());
 
-		when(inboxEventRepository.insertIgnoringDuplicate(any(), any(), anyString(), any()))
+		when(inboxStore.registerIfAbsent(any(), any(), anyString(), any()))
 				.thenThrow(new DataIntegrityViolationException("constraint violated"));
 
 		assertThatThrownBy(() -> processor.process(event))
 				.isInstanceOf(NonRetryableKafkaProcessingException.class);
 
-		verifyNoInteractions(packageService);
+		verifyNoInteractions(packageUseCase);
 	}
 
 	@Test
 	void shouldMapTransientErrorOnCreatePackagesToRetryable() {
 		final PackageCreateRequestEvent event = event(EVENT_TYPE, 1, validItem());
 
-		when(inboxEventRepository.insertIgnoringDuplicate(any(), any(), anyString(), any())).thenReturn(1);
-		when(packageService.createPackages(any()))
+		when(inboxStore.registerIfAbsent(any(), any(), anyString(), any())).thenReturn(true);
+		when(packageUseCase.createPackages(any()))
 				.thenThrow(new TransientDataAccessResourceException("db hiccup"));
 
 		assertThatThrownBy(() -> processor.process(event))
@@ -236,8 +230,8 @@ class PackageCreateRequestProcessorTest {
 	void shouldMapPackageNotAcceptedOnCreatePackagesToNonRetryable() {
 		final PackageCreateRequestEvent event = event(EVENT_TYPE, 1, validItem());
 
-		when(inboxEventRepository.insertIgnoringDuplicate(any(), any(), anyString(), any())).thenReturn(1);
-		when(packageService.createPackages(any()))
+		when(inboxStore.registerIfAbsent(any(), any(), anyString(), any())).thenReturn(true);
+		when(packageUseCase.createPackages(any()))
 				.thenThrow(new PackageNotAcceptedException("weight too high"));
 
 		assertThatThrownBy(() -> processor.process(event))
@@ -248,8 +242,8 @@ class PackageCreateRequestProcessorTest {
 	void shouldMapDataIntegrityViolationOnCreatePackagesToNonRetryable() {
 		final PackageCreateRequestEvent event = event(EVENT_TYPE, 1, validItem());
 
-		when(inboxEventRepository.insertIgnoringDuplicate(any(), any(), anyString(), any())).thenReturn(1);
-		when(packageService.createPackages(any()))
+		when(inboxStore.registerIfAbsent(any(), any(), anyString(), any())).thenReturn(true);
+		when(packageUseCase.createPackages(any()))
 				.thenThrow(new DataIntegrityViolationException("constraint violated"));
 
 		assertThatThrownBy(() -> processor.process(event))
@@ -258,7 +252,7 @@ class PackageCreateRequestProcessorTest {
 
 	@Test
 	void shouldFailFastWhenTwoHandlersClaimTheSameVersion() {
-		final PackageCreateRequestV1Handler handler = new PackageCreateRequestV1Handler(packageService);
+		final PackageCreateRequestV1Handler handler = new PackageCreateRequestV1Handler(packageUseCase);
 
 		assertThatThrownBy(() -> new PackageCreateRequestHandlerRegistry(List.of(handler, handler)))
 				.isInstanceOf(IllegalStateException.class);

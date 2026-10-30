@@ -6,7 +6,7 @@ import org.example.packing.infrastructure.kafka.event.PackageCreateRequestEvent;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestItem;
 import org.example.packing.infrastructure.kafka.support.KafkaContainerHandler;
 import org.example.packing.infrastructure.kafka.support.KafkaPostgresContainersInitializer;
-import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
+import org.example.packing.infrastructure.persistence.entity.VehicleEntity;
 import org.example.packing.infrastructure.persistence.repository.PackageJpaRepository;
 import org.example.packing.infrastructure.persistence.repository.VehicleJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * packages arriving through Kafka, then a packing run (real HTTP endpoint,
  * real Postgres, real Kafka) actually assigning them to vehicles.
  * <p>
- * {@code PackingRunnerService.runPacking()} loads <em>every</em> row from
+ * {@code RunPackingUseCase.runPacking()} loads <em>every</em> row from
  * {@code packages}/{@code vehicles} with no filtering, so this test wipes
  * both tables first — otherwise leftover rows from other test classes
  * sharing this same Postgres container (see {@code KafkaPostgresContainersInitializer})
@@ -108,7 +108,8 @@ class PackingRunIntegrationTest {
 				.getResponse()
 				.getContentAsString();
 
-		@SuppressWarnings("unchecked") final Map<String, Object> response = objectMapper.readValue(responseJson, Map.class);
+		@SuppressWarnings("unchecked") final Map<String, Object> body = objectMapper.readValue(responseJson, Map.class);
+		@SuppressWarnings("unchecked") final Map<String, Object> response = (Map<String, Object>) body.get("data");
 
 		// then: wszystkie 40 paczek zostały przydzielone, na więcej niż jeden pojazd
 		assertThat(intValue(response, "totalPackagesIn")).isEqualTo(PACKAGE_COUNT);
@@ -122,8 +123,8 @@ class PackingRunIntegrationTest {
 		return ((Number) map.get(key)).intValue();
 	}
 
-	private VehiclesEntity vehicle(final String name) {
-		return new VehiclesEntity(
+	private VehicleEntity vehicle(final String name) {
+		return new VehicleEntity(
 				UUID.randomUUID(), name, VEHICLE_CARGO_LENGTH, VEHICLE_CARGO_WIDTH, VEHICLE_CARGO_HEIGHT, VEHICLE_MAX_PAYLOAD
 		);
 	}

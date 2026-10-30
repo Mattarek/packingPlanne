@@ -7,11 +7,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * Decides whether the company accepts a package for transport by running it
- * through the configured {@link PackageAcceptanceRule}s, in order. The first
- * violated rule wins.
- */
 public final class PackageAcceptancePolicy {
 
 	private final List<PackageAcceptanceRule> rules;

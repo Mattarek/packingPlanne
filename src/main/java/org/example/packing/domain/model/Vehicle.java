@@ -16,5 +16,9 @@ public record Vehicle(UUID id, String name, Dimensions cargoArea, Weight maxPayl
 		return cargoArea.volume();
 	}
 
-	// No equals/hashCode overrides on purpose – see Package.
+	public boolean canCarry(final Package pkg) {
+		Objects.requireNonNull(pkg, "pkg must not be null");
+		return pkg.dimensions().fitsInside(cargoArea)
+				&& pkg.weight().isLessThanOrEqualTo(maxPayload);
+	}
 }

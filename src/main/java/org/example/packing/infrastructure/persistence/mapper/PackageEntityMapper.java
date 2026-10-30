@@ -1,18 +1,15 @@
 package org.example.packing.infrastructure.persistence.mapper;
 
-import org.example.packing.application.mapper.PackingMapperConfig;
 import org.example.packing.domain.model.Dimensions;
 import org.example.packing.domain.model.Package;
 import org.example.packing.domain.model.Weight;
+import org.example.packing.infrastructure.mapping.PackingMapperConfig;
 import org.example.packing.infrastructure.persistence.entity.PackageEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import java.util.List;
 
-/**
- * Persistence <-> domain only. Changes only when the table or the domain model changes.
- */
 @Mapper(config = PackingMapperConfig.class)
 public interface PackageEntityMapper {
 

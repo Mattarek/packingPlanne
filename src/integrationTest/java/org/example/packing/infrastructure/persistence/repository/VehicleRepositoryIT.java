@@ -1,6 +1,6 @@
 package org.example.packing.infrastructure.persistence.repository;
 
-import org.example.packing.infrastructure.persistence.entity.VehiclesEntity;
+import org.example.packing.infrastructure.persistence.entity.VehicleEntity;
 import org.example.packing.integration.AbstractPostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
@@ -21,7 +21,7 @@ class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 	@Test
 	void shouldSaveAndFindVehicleUsingPostgresContainer() {
 		// given
-		final VehiclesEntity entity = new VehiclesEntity(
+		final VehicleEntity entity = new VehicleEntity(
 				UUID.randomUUID(),
 				"Truck 1",
 				100.0,
@@ -31,12 +31,12 @@ class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 		);
 
 		// when
-		final VehiclesEntity saved = vehicleRepository.saveAndFlush(entity);
+		final VehicleEntity saved = vehicleRepository.saveAndFlush(entity);
 
 		// then
 		assertThat(saved.getId()).isNotNull();
 
-		final VehiclesEntity found = vehicleRepository.findById(saved.getId())
+		final VehicleEntity found = vehicleRepository.findById(saved.getId())
 				.orElseThrow();
 
 		assertThat(found.getId()).isEqualTo(saved.getId());
@@ -50,7 +50,7 @@ class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 	@Test
 	void shouldDeleteVehicleUsingPostgresContainer() {
 		// given
-		final VehiclesEntity entity = new VehiclesEntity(
+		final VehicleEntity entity = new VehicleEntity(
 				UUID.randomUUID(),
 				"Truck 1",
 				100.0,
@@ -59,7 +59,7 @@ class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 				1000.0
 		);
 
-		final VehiclesEntity saved = vehicleRepository.saveAndFlush(entity);
+		final VehicleEntity saved = vehicleRepository.saveAndFlush(entity);
 
 		// when
 		vehicleRepository.deleteById(saved.getId());
@@ -72,7 +72,7 @@ class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 	@Test
 	void shouldFindAllSavedVehiclesUsingPostgresContainer() {
 		// given
-		final VehiclesEntity first = new VehiclesEntity(
+		final VehicleEntity first = new VehicleEntity(
 				UUID.randomUUID(),
 				"Small truck",
 				100.0,
@@ -81,7 +81,7 @@ class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 				1000.0
 		);
 
-		final VehiclesEntity second = new VehiclesEntity(
+		final VehicleEntity second = new VehicleEntity(
 				UUID.randomUUID(),
 				"Big truck",
 				200.0,
@@ -99,14 +99,14 @@ class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 		// then
 		assertThat(result)
 				.hasSize(2)
-				.extracting(VehiclesEntity::getName)
+				.extracting(VehicleEntity::getName)
 				.containsExactlyInAnyOrder("Small truck", "Big truck");
 	}
 
 	@Test
 	void shouldGenerateDifferentIdsForDifferentVehicles() {
 		// given
-		final VehiclesEntity first = new VehiclesEntity(
+		final VehicleEntity first = new VehicleEntity(
 				UUID.randomUUID(),
 				"Small truck",
 				100.0,
@@ -115,7 +115,7 @@ class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 				1000.0
 		);
 
-		final VehiclesEntity second = new VehiclesEntity(
+		final VehicleEntity second = new VehicleEntity(
 				UUID.randomUUID(),
 				"Big truck",
 				200.0,
@@ -125,8 +125,8 @@ class VehicleRepositoryIT extends AbstractPostgresIntegrationTest {
 		);
 
 		// when
-		final VehiclesEntity savedFirst = vehicleRepository.saveAndFlush(first);
-		final VehiclesEntity savedSecond = vehicleRepository.saveAndFlush(second);
+		final VehicleEntity savedFirst = vehicleRepository.saveAndFlush(first);
+		final VehicleEntity savedSecond = vehicleRepository.saveAndFlush(second);
 
 		// then
 		assertThat(savedFirst.getId()).isNotNull();

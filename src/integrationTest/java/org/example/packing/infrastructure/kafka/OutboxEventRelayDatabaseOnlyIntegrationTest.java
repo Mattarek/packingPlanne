@@ -1,8 +1,8 @@
 package org.example.packing.infrastructure.kafka;
 
 import org.example.packing.infrastructure.kafka.support.PostgresOnlyContainerInitializer;
+import org.example.packing.infrastructure.messaging.outbox.OutboxEventStatus;
 import org.example.packing.infrastructure.persistence.entity.OutboxEventEntity;
-import org.example.packing.infrastructure.persistence.entity.OutboxEventStatus;
 import org.example.packing.infrastructure.persistence.repository.OutboxEventRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

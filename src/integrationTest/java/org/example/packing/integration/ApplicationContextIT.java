@@ -1,28 +1,28 @@
 package org.example.packing.integration;
 
-import org.example.packing.application.service.PackageService;
-import org.example.packing.application.service.VehicleService;
-import org.example.packing.application.strategy.PackingStrategy;
+import org.example.packing.application.port.in.PackageUseCase;
+import org.example.packing.application.port.in.VehicleUseCase;
+import org.example.packing.domain.packing.PackingStrategy;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ApplicationContextIT extends AbstractPostgresIntegrationTest {
 
-	private final PackageService packageService;
-	private final VehicleService vehicleService;
+	private final PackageUseCase packageUseCase;
+	private final VehicleUseCase vehicleUseCase;
 	private final PackingStrategy packingStrategy;
 
-	public ApplicationContextIT(final PackageService packageService, final VehicleService vehicleService, final PackingStrategy packingStrategy) {
-		this.packageService = packageService;
-		this.vehicleService = vehicleService;
+	public ApplicationContextIT(final PackageUseCase packageUseCase, final VehicleUseCase vehicleUseCase, final PackingStrategy packingStrategy) {
+		this.packageUseCase = packageUseCase;
+		this.vehicleUseCase = vehicleUseCase;
 		this.packingStrategy = packingStrategy;
 	}
 
 	@Test
 	void shouldLoadApplicationContextWithPostgresContainer() {
-		assertThat(packageService).isNotNull();
-		assertThat(vehicleService).isNotNull();
+		assertThat(packageUseCase).isNotNull();
+		assertThat(vehicleUseCase).isNotNull();
 		assertThat(packingStrategy).isNotNull();
 	}
 

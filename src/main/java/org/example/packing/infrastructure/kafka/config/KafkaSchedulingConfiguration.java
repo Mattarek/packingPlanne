@@ -1,15 +1,11 @@
 package org.example.packing.infrastructure.kafka.config;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.example.packing.infrastructure.config.ConditionalOnKafkaEnabled;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Configuration
 @EnableScheduling
-@ConditionalOnProperty(
-		name = "app.kafka.enabled",
-		havingValue = "true",
-		matchIfMissing = true
-)
+@ConditionalOnKafkaEnabled
 public class KafkaSchedulingConfiguration {
 }

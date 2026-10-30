@@ -9,18 +9,12 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Picks the {@link PackageCreateRequestHandler} for an event's type and version.
- * Handlers are collected by Spring, so this class never changes when a version
- * is added.
- */
 @Component
 public class PackageCreateRequestHandlerRegistry {
 
 	private final Map<HandlerKey, PackageCreateRequestHandler> handlers;
 
 	public PackageCreateRequestHandlerRegistry(final List<PackageCreateRequestHandler> handlers) {
-		// toMap fails on duplicates, so two handlers for the same version break startup, not production.
 		this.handlers = handlers.stream()
 				.collect(Collectors.toUnmodifiableMap(
 						handler -> new HandlerKey(handler.eventType(), handler.version()),

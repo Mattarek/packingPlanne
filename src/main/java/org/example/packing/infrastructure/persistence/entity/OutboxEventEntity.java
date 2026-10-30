@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.example.packing.infrastructure.messaging.outbox.OutboxEventStatus;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -99,26 +100,22 @@ public class OutboxEventEntity {
 		attempts = 0;
 	}
 
-	public void markPublished(final Instant publishedAt) {
-		status = OutboxEventStatus.PUBLISHED;
+	public OutboxEventEntity(
+			final UUID id,
+			final UUID eventId,
+			final String aggregateId,
+			final String eventType,
+			final String topicName,
+			final String payload,
+			final Instant createdAt,
+			final OutboxEventStatus status,
+			final Instant publishedAt,
+			final int attempts
+	) {
+		this(id, eventId, aggregateId, eventType, topicName, payload, createdAt);
+		this.status = status;
 		this.publishedAt = publishedAt;
-	}
-
-	/**
-	 * Called after every failed publish attempt. Once {@code maxAttempts} is
-	 * reached the event is given up on ({@link OutboxEventStatus#FAILED}) –
-	 * the entity owns this transition, the relay only reports the failure
-	 * (same shape as {@link DeadLetterEventEntity#recordFailure}).
-	 */
-	public void recordFailedAttempt(final int maxAttempts) {
-		attempts++;
-		if (attempts >= maxAttempts) {
-			status = OutboxEventStatus.FAILED;
-		}
-	}
-
-	public boolean isFailed() {
-		return status == OutboxEventStatus.FAILED;
+		this.attempts = attempts;
 	}
 
 	public UUID getId() {

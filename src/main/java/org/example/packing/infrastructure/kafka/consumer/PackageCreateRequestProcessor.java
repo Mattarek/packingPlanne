@@ -4,18 +4,12 @@ import org.example.packing.infrastructure.kafka.event.PackageCreateRequestEvent;
 import org.example.packing.infrastructure.kafka.exception.KafkaExceptionTranslator;
 import org.example.packing.infrastructure.kafka.handler.PackageCreateRequestHandler;
 import org.example.packing.infrastructure.kafka.handler.PackageCreateRequestHandlerRegistry;
-import org.example.packing.infrastructure.kafka.inbox.InboxDeduplicator;
+import org.example.packing.infrastructure.messaging.inbox.InboxDeduplicator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Runs an incoming package-create-request through the consumer pipeline:
- * validate -> pick versioned handler -> deduplicate -> handle, with database
- * failures translated into Kafka retry semantics. Each step is a separate
- * collaborator; this class only decides the order and the transaction boundary.
- */
 @Component
 public class PackageCreateRequestProcessor {
 

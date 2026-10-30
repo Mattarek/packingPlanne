@@ -1,6 +1,6 @@
 package org.example.packing.infrastructure.persistence.adapter;
 
-import org.example.packing.application.port.PackingInputLoader;
+import org.example.packing.application.port.out.PackingInputLoader;
 import org.example.packing.domain.model.Package;
 import org.example.packing.domain.model.Vehicle;
 import org.example.packing.infrastructure.persistence.mapper.PackageEntityMapper;
@@ -8,6 +8,7 @@ import org.example.packing.infrastructure.persistence.mapper.VehicleEntityMapper
 import org.example.packing.infrastructure.persistence.repository.PackageJpaRepository;
 import org.example.packing.infrastructure.persistence.repository.VehicleJpaRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -32,11 +33,13 @@ public class JpaPackingInputLoader implements PackingInputLoader {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<Package> loadPackages() {
 		return packageMapper.toDomainList(packageJpaRepository.findAll());
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<Vehicle> loadVehicles() {
 		return vehicleMapper.toDomainList(vehicleJpaRepository.findAll());
 	}

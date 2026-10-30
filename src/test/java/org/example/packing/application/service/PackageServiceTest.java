@@ -1,9 +1,11 @@
 package org.example.packing.application.service;
 
 import org.example.packing.application.command.CreatePackageCommand;
-import org.example.packing.application.port.IdGenerator;
-import org.example.packing.application.port.PackageCreatedPublisher;
-import org.example.packing.application.port.PackageRepository;
+import org.example.packing.application.port.PageQuery;
+import org.example.packing.application.port.PageResult;
+import org.example.packing.application.port.out.IdGenerator;
+import org.example.packing.application.port.out.PackageCreatedPublisher;
+import org.example.packing.application.port.out.PackageRepository;
 import org.example.packing.domain.exception.PackageNotAcceptedException;
 import org.example.packing.domain.exception.PackageNotFoundException;
 import org.example.packing.domain.model.Dimensions;
@@ -22,11 +24,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,17 +32,11 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-/**
- * No Spring, no JPA entities, no Spring Data mocks – only the application's own
- * ports, a real acceptance policy and a deterministic id generator.
- */
 @ExtendWith(MockitoExtension.class)
 class PackageServiceTest {
 
@@ -168,7 +159,7 @@ class PackageServiceTest {
 
 	@Test
 	void shouldUseTheInjectedPolicyInsteadOfAHardCodedOne() {
-		// given: a policy with no rules accepts even a 31 kg package
+		// given
 		final PackageService permissiveService = new PackageService(
 				packageRepository,
 				new PackageAcceptancePolicy(List.of()),
@@ -187,38 +178,17 @@ class PackageServiceTest {
 	}
 
 	@Test
-	void shouldReturnPagedPackagesSortedByIdAscending() {
+	void shouldReturnRequestedPage() {
 		// given
-		final int page = 0;
-		final int size = 10;
-
-		final Page<Package> domainPage = new PageImpl<>(
-				List.of(existingPackage),
-				PageRequest.of(page, size, Sort.by("id").ascending()),
-				1
-		);
-
-		when(packageRepository.findAll(any(Pageable.class))).thenReturn(domainPage);
-
-		final ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+		final PageResult<Package> page = new PageResult<>(List.of(existingPackage), 0, 10, 1);
+		when(packageRepository.findPage(new PageQuery(0, 10))).thenReturn(page);
 
 		// when
-		final Page<Package> result = packageService.getPackages(page, size);
+		final PageResult<Package> result = packageService.getPackages(0, 10);
 
 		// then
-		assertThat(result.getContent()).containsExactly(existingPackage);
-		assertThat(result.getNumber()).isEqualTo(page);
-		assertThat(result.getSize()).isEqualTo(size);
-		assertThat(result.getTotalElements()).isEqualTo(1);
-
-		verify(packageRepository).findAll(pageableCaptor.capture());
-
-		final Pageable capturedPageable = pageableCaptor.getValue();
-
-		assertThat(capturedPageable.getPageNumber()).isEqualTo(page);
-		assertThat(capturedPageable.getPageSize()).isEqualTo(size);
-		assertThat(capturedPageable.getSort()).isEqualTo(Sort.by("id").ascending());
-
+		assertThat(result).isEqualTo(page);
+		verify(packageRepository).findPage(new PageQuery(0, 10));
 		verifyNoMoreInteractions(packageRepository);
 	}
 
@@ -253,13 +223,12 @@ class PackageServiceTest {
 	@Test
 	void shouldDeletePackageById() {
 		// given
-		when(packageRepository.existsById(packageId)).thenReturn(true);
+		when(packageRepository.deleteById(packageId)).thenReturn(true);
 
 		// when
 		packageService.deletePackage(packageId);
 
 		// then
-		verify(packageRepository).existsById(packageId);
 		verify(packageRepository).deleteById(packageId);
 
 		verifyNoMoreInteractions(packageRepository);
@@ -268,14 +237,13 @@ class PackageServiceTest {
 	@Test
 	void shouldThrowExceptionWhenPackageDoesNotExistWhileDeletingPackage() {
 		// given
-		when(packageRepository.existsById(packageId)).thenReturn(false);
+		when(packageRepository.deleteById(packageId)).thenReturn(false);
 
 		// when & then
 		assertThatThrownBy(() -> packageService.deletePackage(packageId))
 				.isInstanceOf(PackageNotFoundException.class);
 
-		verify(packageRepository).existsById(packageId);
-		verify(packageRepository, never()).deleteById(any());
+		verify(packageRepository).deleteById(packageId);
 
 		verifyNoMoreInteractions(packageRepository);
 	}
