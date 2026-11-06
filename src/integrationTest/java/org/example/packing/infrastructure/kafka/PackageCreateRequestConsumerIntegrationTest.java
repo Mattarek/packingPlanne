@@ -1,7 +1,5 @@
 package org.example.packing.infrastructure.kafka;
 
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -11,9 +9,13 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.example.packing.application.port.in.PackageUseCase;
 import org.example.packing.infrastructure.kafka.support.KafkaContainerHandler;
 import org.example.packing.infrastructure.kafka.support.KafkaPostgresContainersInitializer;
+import org.example.packing.infrastructure.messaging.deadletter.DeadLetterStore;
+import org.example.packing.infrastructure.persistence.repository.InboxEventRepository;
+import org.example.packing.infrastructure.persistence.repository.InboxMessageRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -27,9 +29,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
@@ -50,6 +50,15 @@ class PackageCreateRequestConsumerIntegrationTest {
 
 	@MockitoSpyBean
 	private PackageUseCase packageUseCase;
+
+	@Autowired
+	private InboxMessageRepository inboxMessageRepository;
+
+	@Autowired
+	private InboxEventRepository inboxEventRepository;
+
+	@Autowired
+	private DeadLetterStore deadLetterStore;
 
 	@AfterEach
 	void resetSpy() {
@@ -91,7 +100,25 @@ class PackageCreateRequestConsumerIntegrationTest {
 	}
 
 	@Test
-	void shouldRetryOnTransientErrorAndEventuallySucceed() {
+	void shouldProcessFromInboxAndDeleteTheMessageAfterwards() {
+		// given
+		final long before = totalPackages();
+		final UUID eventId = UUID.randomUUID();
+
+		// when
+		send(validMessage(eventId));
+
+		// then
+		await().untilAsserted(() -> {
+			assertThat(totalPackages()).isEqualTo(before + 2);
+			assertThat(inboxMessagesFor(eventId)).isZero();
+		});
+		assertThat(inboxEventRepository.findAll())
+				.anyMatch(entry -> entry.getEventId().equals(eventId));
+	}
+
+	@Test
+	void shouldRetryFromInboxOnTransientErrorAndEventuallySucceed() {
 		// given
 		final long before = totalPackages();
 		final AtomicInteger invocationCount = new AtomicInteger();
@@ -111,22 +138,14 @@ class PackageCreateRequestConsumerIntegrationTest {
 		send(validMessage(eventId));
 
 		// then
-		final String retryTopic = discoverRetryTopicName();
-		final List<ConsumerRecord<String, String>> retryRecords =
-				collectRecords(
-						retryTopic,
-						1,
-						Duration.ofSeconds(30),
-						value -> value.contains(eventId.toString())
-				);
-		assertThat(retryRecords).isNotEmpty();
-
-		await().untilAsserted(() ->
-				assertThat(totalPackages()).isEqualTo(before + 2)
-		);
+		await().untilAsserted(() -> {
+			assertThat(totalPackages()).isEqualTo(before + 2);
+			assertThat(inboxMessagesFor(eventId)).isZero();
+		});
 
 		verify(packageUseCase, Mockito.timeout(5_000).times(2))
 				.createPackages(any());
+		assertThat(deadLetterStore.findByEventId(eventId)).isEmpty();
 	}
 
 	@Test
@@ -274,7 +293,7 @@ class PackageCreateRequestConsumerIntegrationTest {
 	}
 
 	@Test
-	void shouldSendToDltAfterExhaustingRetries() {
+	void shouldDeadLetterAfterExhaustingInboxAttemptsAndAllowReplay() {
 		// given
 		final long before = totalPackages();
 		final UUID eventId = UUID.randomUUID();
@@ -287,16 +306,22 @@ class PackageCreateRequestConsumerIntegrationTest {
 		send(validMessage(eventId));
 
 		// then
-		final List<ConsumerRecord<String, String>> dltRecords =
-				collectRecords(
-						DLT_TOPIC,
-						1,
-						Duration.ofSeconds(30),
-						value -> value.contains(eventId.toString())
-				);
+		await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {
+			assertThat(deadLetterStore.findByEventId(eventId)).isPresent();
+			assertThat(inboxMessagesFor(eventId)).isZero();
+		});
 
-		assertThat(dltRecords).isNotEmpty();
+		verify(packageUseCase, Mockito.timeout(5_000).times(3))
+				.createPackages(any());
 		assertThat(totalPackages()).isEqualTo(before);
+		assertThat(inboxEventRepository.findAll())
+				.noneMatch(entry -> entry.getEventId().equals(eventId));
+	}
+
+	private long inboxMessagesFor(final UUID eventId) {
+		return inboxMessageRepository.findAll().stream()
+				.filter(message -> message.getEventId().equals(eventId))
+				.count();
 	}
 
 	private long totalPackages() {
@@ -353,34 +378,6 @@ class PackageCreateRequestConsumerIntegrationTest {
 		return new KafkaTemplate<>(
 				new DefaultKafkaProducerFactory<>(properties)
 		);
-	}
-
-	private String discoverRetryTopicName() {
-		final Map<String, Object> adminProps = Map.of(
-				AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
-				KafkaContainerHandler.container().getBootstrapServers()
-		);
-
-		try (final AdminClient adminClient = AdminClient.create(adminProps)) {
-			return await()
-					.atMost(Duration.ofSeconds(15))
-					.until(
-							() -> adminClient.listTopics()
-									.names()
-									.get(10, TimeUnit.SECONDS)
-									.stream()
-									.filter(name -> name.startsWith(TOPIC)
-											&& name.contains("retry"))
-									.sorted()
-									.findFirst(),
-							Optional::isPresent
-					)
-					.orElseThrow();
-		} catch (final Exception exception) {
-			throw new IllegalStateException(
-					"Retry topic for " + TOPIC + " was not created", exception
-			);
-		}
 	}
 
 	private List<ConsumerRecord<String, String>> collectRecords(

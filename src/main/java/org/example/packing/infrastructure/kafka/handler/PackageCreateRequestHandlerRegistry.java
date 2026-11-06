@@ -1,5 +1,7 @@
 package org.example.packing.infrastructure.kafka.handler;
 
+import org.example.packing.infrastructure.kafka.event.EventContract;
+import org.example.packing.infrastructure.kafka.event.EventType;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestEvent;
 import org.example.packing.infrastructure.kafka.exception.NonRetryableKafkaProcessingException;
 import org.springframework.stereotype.Component;
@@ -12,34 +14,28 @@ import java.util.stream.Collectors;
 @Component
 public class PackageCreateRequestHandlerRegistry {
 
-	private final Map<HandlerKey, PackageCreateRequestHandler> handlers;
+	private final Map<EventContract, PackageCreateRequestHandler> handlers;
 
 	public PackageCreateRequestHandlerRegistry(final List<PackageCreateRequestHandler> handlers) {
 		this.handlers = handlers.stream()
-				.collect(Collectors.toUnmodifiableMap(
-						handler -> new HandlerKey(handler.eventType(), handler.version()),
-						Function.identity()
-				));
+				.collect(Collectors.toUnmodifiableMap(PackageCreateRequestHandler::contract, Function.identity()));
 	}
 
 	public PackageCreateRequestHandler handlerFor(final PackageCreateRequestEvent event) {
-		final PackageCreateRequestHandler handler =
-				handlers.get(new HandlerKey(event.eventType(), event.version()));
+		return EventType.findByWireValue(event.eventType())
+				.map(type -> new EventContract(type, event.version()))
+				.map(handlers::get)
+				.orElseThrow(() -> unsupported(event));
+	}
 
-		if (handler != null) {
-			return handler;
-		}
+	private NonRetryableKafkaProcessingException unsupported(final PackageCreateRequestEvent event) {
+		final boolean typeHandled = handlers.keySet().stream()
+				.anyMatch(contract -> contract.hasType(event.eventType()));
 
-		final boolean typeKnown = handlers.keySet().stream()
-				.anyMatch(key -> key.eventType().equals(event.eventType()));
-
-		throw new NonRetryableKafkaProcessingException(
-				typeKnown
+		return new NonRetryableKafkaProcessingException(
+				typeHandled
 						? "Unsupported event version: " + event.version()
 						: "Unsupported event type: " + event.eventType()
 		);
-	}
-
-	private record HandlerKey(String eventType, int version) {
 	}
 }

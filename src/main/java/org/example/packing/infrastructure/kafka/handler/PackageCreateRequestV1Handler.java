@@ -3,9 +3,12 @@ package org.example.packing.infrastructure.kafka.handler;
 import org.example.packing.application.command.CreatePackageCommand;
 import org.example.packing.application.port.in.PackageUseCase;
 import org.example.packing.domain.model.Package;
-import org.example.packing.infrastructure.kafka.event.EventEnumMapper;
+import org.example.packing.infrastructure.kafka.event.EventContract;
+import org.example.packing.infrastructure.kafka.event.EventType;
+import org.example.packing.infrastructure.kafka.event.FragilityLevelWire;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestEvent;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestItem;
+import org.example.packing.infrastructure.kafka.event.ProductCategoryWire;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -17,6 +20,8 @@ public class PackageCreateRequestV1Handler implements PackageCreateRequestHandle
 
 	private static final Logger log = LoggerFactory.getLogger(PackageCreateRequestV1Handler.class);
 
+	private static final EventContract CONTRACT = EventContract.v1(EventType.PACKAGE_CREATE_REQUESTED);
+
 	private final PackageUseCase packageUseCase;
 
 	public PackageCreateRequestV1Handler(final PackageUseCase packageUseCase) {
@@ -24,13 +29,8 @@ public class PackageCreateRequestV1Handler implements PackageCreateRequestHandle
 	}
 
 	@Override
-	public String eventType() {
-		return "PACKAGE_CREATE_REQUESTED";
-	}
-
-	@Override
-	public int version() {
-		return 1;
+	public EventContract contract() {
+		return CONTRACT;
 	}
 
 	@Override
@@ -54,8 +54,8 @@ public class PackageCreateRequestV1Handler implements PackageCreateRequestHandle
 				item.width(),
 				item.height(),
 				item.weight(),
-				EventEnumMapper.categoryFromWire(item.category()),
-				EventEnumMapper.fragilityFromWire(item.fragility())
+				ProductCategoryWire.fromWire(item.category()).domain(),
+				FragilityLevelWire.fromWire(item.fragility()).domain()
 		);
 	}
 }

@@ -4,9 +4,12 @@ import org.example.packing.application.port.out.IdGenerator;
 import org.example.packing.application.port.out.PackageCreatedPublisher;
 import org.example.packing.domain.model.Package;
 import org.example.packing.infrastructure.kafka.config.KafkaTopicsProperties;
-import org.example.packing.infrastructure.kafka.event.EventEnumMapper;
+import org.example.packing.infrastructure.kafka.event.EventContract;
+import org.example.packing.infrastructure.kafka.event.EventType;
+import org.example.packing.infrastructure.kafka.event.FragilityLevelWire;
 import org.example.packing.infrastructure.kafka.event.PackageCreatedEvent;
 import org.example.packing.infrastructure.kafka.event.PackageCreatedItem;
+import org.example.packing.infrastructure.kafka.event.ProductCategoryWire;
 import org.example.packing.infrastructure.messaging.PayloadSerializer;
 import org.example.packing.infrastructure.messaging.outbox.AbstractOutboxEventPublisher;
 import org.example.packing.infrastructure.messaging.outbox.OutboxStore;
@@ -22,9 +25,7 @@ public class PackageCreatedOutboxPublisher
 		extends AbstractOutboxEventPublisher<List<Package>>
 		implements PackageCreatedPublisher {
 
-	private static final String EVENT_TYPE = "PACKAGE_CREATED";
-
-	private static final int VERSION = 1;
+	private static final EventContract CONTRACT = EventContract.v1(EventType.PACKAGE_CREATED);
 
 	private final String topicName;
 
@@ -50,12 +51,12 @@ public class PackageCreatedOutboxPublisher
 			final Instant occurredAt,
 			final List<Package> payload
 	) {
-		return new PackageCreatedEvent(eventId, EVENT_TYPE, VERSION, occurredAt, toItems(payload));
+		return new PackageCreatedEvent(eventId, eventType(), CONTRACT.version(), occurredAt, toItems(payload));
 	}
 
 	@Override
 	protected String eventType() {
-		return EVENT_TYPE;
+		return CONTRACT.type().wireValue();
 	}
 
 	@Override
@@ -71,8 +72,8 @@ public class PackageCreatedOutboxPublisher
 						pkg.dimensions().width(),
 						pkg.dimensions().height(),
 						pkg.weight().kilograms(),
-						EventEnumMapper.toWire(pkg.category()),
-						EventEnumMapper.toWire(pkg.fragility())
+						ProductCategoryWire.fromDomain(pkg.category()).wireValue(),
+						FragilityLevelWire.fromDomain(pkg.fragility()).wireValue()
 				))
 				.toList();
 	}

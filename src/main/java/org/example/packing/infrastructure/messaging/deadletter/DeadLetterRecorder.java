@@ -49,26 +49,6 @@ public class DeadLetterRecorder {
 			return;
 		}
 
-		final Instant now = clock.instant();
-
-		deadLetterStore.findByEventId(eventId)
-				.ifPresentOrElse(
-						existing -> {
-							existing.recordFailure(reason, maxRetryAttempts, now);
-							deadLetterStore.save(existing);
-						},
-						() -> recordFirstFailure(eventId, eventType, topicName, event, reason, now)
-				);
-	}
-
-	private void recordFirstFailure(
-			final UUID eventId,
-			final String eventType,
-			final String topicName,
-			final Object event,
-			final String reason,
-			final Instant now
-	) {
 		final String payload;
 		try {
 			payload = payloadSerializer.serialize(event);
@@ -82,6 +62,37 @@ public class DeadLetterRecorder {
 			return;
 		}
 
+		recordSerialized(eventId, eventType, topicName, payload, reason);
+	}
+
+	@Transactional
+	public void recordSerialized(
+			final UUID eventId,
+			final String eventType,
+			final String topicName,
+			final String payload,
+			final String reason
+	) {
+		final Instant now = clock.instant();
+
+		deadLetterStore.findByEventId(eventId)
+				.ifPresentOrElse(
+						existing -> {
+							existing.recordFailure(reason, maxRetryAttempts, now);
+							deadLetterStore.save(existing);
+						},
+						() -> recordFirstFailure(eventId, eventType, topicName, payload, reason, now)
+				);
+	}
+
+	private void recordFirstFailure(
+			final UUID eventId,
+			final String eventType,
+			final String topicName,
+			final String payload,
+			final String reason,
+			final Instant now
+	) {
 		deadLetterStore.save(DeadLetter.firstFailure(
 				idGenerator.newId(),
 				eventId,

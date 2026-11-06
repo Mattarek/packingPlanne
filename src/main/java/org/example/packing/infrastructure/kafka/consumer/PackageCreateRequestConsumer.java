@@ -2,6 +2,7 @@ package org.example.packing.infrastructure.kafka.consumer;
 
 import org.example.packing.infrastructure.config.ConditionalOnKafkaEnabled;
 import org.example.packing.infrastructure.kafka.config.KafkaTopicsProperties;
+import org.example.packing.infrastructure.kafka.event.EventType;
 import org.example.packing.infrastructure.kafka.event.PackageCreateRequestEvent;
 import org.example.packing.infrastructure.kafka.exception.NonRetryableKafkaProcessingException;
 import org.example.packing.infrastructure.messaging.deadletter.DeadLetterRecorder;
@@ -23,18 +24,16 @@ public class PackageCreateRequestConsumer {
 
 	private static final Logger log = LoggerFactory.getLogger(PackageCreateRequestConsumer.class);
 
-	private static final String EVENT_TYPE = "PACKAGE_CREATE_REQUESTED";
-
-	private final PackageCreateRequestProcessor processor;
+	private final PackageCreateRequestInboxWriter inboxWriter;
 	private final DeadLetterRecorder deadLetterRecorder;
 	private final String topicName;
 
 	public PackageCreateRequestConsumer(
-			final PackageCreateRequestProcessor processor,
+			final PackageCreateRequestInboxWriter inboxWriter,
 			final DeadLetterRecorder deadLetterRecorder,
 			final KafkaTopicsProperties topics
 	) {
-		this.processor = processor;
+		this.inboxWriter = inboxWriter;
 		this.deadLetterRecorder = deadLetterRecorder;
 		this.topicName = topics.packageCreateRequests();
 	}
@@ -52,7 +51,7 @@ public class PackageCreateRequestConsumer {
 			groupId = "${spring.kafka.consumer.group-id}"
 	)
 	public void consume(final PackageCreateRequestEvent event) {
-		processor.process(event);
+		inboxWriter.write(event);
 	}
 
 	@DltHandler
@@ -71,6 +70,12 @@ public class PackageCreateRequestConsumer {
 				exceptionMessage
 		);
 
-		deadLetterRecorder.record(eventId, EVENT_TYPE, topicName, event, exceptionMessage);
+		deadLetterRecorder.record(
+				eventId,
+				EventType.PACKAGE_CREATE_REQUESTED.wireValue(),
+				topicName,
+				event,
+				exceptionMessage
+		);
 	}
 }

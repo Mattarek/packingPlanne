@@ -4,6 +4,8 @@ spring:
     username: ${DB_USER:app_user}
     password: ${DB_PASSWORD:app_password}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 15
 
   jpa:
     hibernate:
@@ -16,6 +18,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+  task:
+    scheduling:
+      pool:
+        size: 5
 
   liquibase:
     enabled: true
@@ -96,6 +103,18 @@ app:
       send-timeout: 35s
       retention: 7d
       cleanup-interval-ms: 3600000
+
+    inbox:
+      poll-interval-ms: 500
+      batch-size: 200
+      worker-threads: 4
+      lease: 5m
+      max-attempts: 5
+      initial-backoff: 1s
+      max-backoff: 5m
+      ledger-retention: 7d
+      cleanup-batch-size: 5000
+      cleanup-interval-ms: 600000
 
     dead-letter:
       # DeadLetterRetryScheduler: resubmits events parked on a .DLT topic

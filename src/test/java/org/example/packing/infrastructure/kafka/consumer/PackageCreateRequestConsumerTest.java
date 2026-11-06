@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 class PackageCreateRequestConsumerTest {
 
 	@Mock
-	private PackageCreateRequestProcessor processor;
+	private PackageCreateRequestInboxWriter inboxWriter;
 
 	@Mock
 	private DeadLetterRecorder deadLetterRecorder;
@@ -32,14 +32,14 @@ class PackageCreateRequestConsumerTest {
 	@BeforeEach
 	void setUp() {
 		consumer = new PackageCreateRequestConsumer(
-				processor,
+				inboxWriter,
 				deadLetterRecorder,
 				new KafkaTopicsProperties(3, "package-create-requests", "package-created-events")
 		);
 	}
 
 	@Test
-	void shouldDelegateConsumedEventToProcessor() {
+	void shouldDelegateConsumedEventToInboxWriter() {
 		// given
 		final PackageCreateRequestEvent event = mock(PackageCreateRequestEvent.class);
 
@@ -47,8 +47,8 @@ class PackageCreateRequestConsumerTest {
 		consumer.consume(event);
 
 		// then
-		verify(processor).process(event);
-		verifyNoMoreInteractions(processor);
+		verify(inboxWriter).write(event);
+		verifyNoMoreInteractions(inboxWriter);
 	}
 
 	@Test

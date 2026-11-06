@@ -15,8 +15,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -101,13 +99,12 @@ class DeadLetterRecorderTest {
 				new DeadLetterProperties(50, 2)
 		);
 		final UUID eventId = UUID.randomUUID();
-		when(store.findByEventId(eventId)).thenReturn(Optional.empty());
 
 		// when
 		failingSerializer.record(eventId, "ANY_EVENT", "any-topic", "event-body", "boom");
 
 		// then
-		verify(store, never()).save(any());
+		verifyNoInteractions(store);
 	}
 
 	@Test
