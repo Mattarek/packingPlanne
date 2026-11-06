@@ -7,12 +7,41 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  liquibase:
+    enabled: true
+    change-log: classpath:/db/changelog/db.changelog-master.xml
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+
+    consumer:
+      group-id: packing-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+        spring.json.value.default.type: org.example.packing.infrastructure.kafka.event.PackageCreateRequestEvent
+        spring.json.use.type.headers: false
+        spring.json.trusted.packages: org.example.packing.infrastructure.kafka.event
+
+    producer:
+      client-id: packing-producer
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+app:
+  kafka:
+    enabled: true
+    topics:
+      partitions: 3
+      package-create-requests: package-create-requests
 server:
   port: 8080

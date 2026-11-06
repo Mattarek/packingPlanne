@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="
+            http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet
+            id="008-create-inbox-messages"
+            author="marcin">
+
+        <createTable tableName="inbox_messages">
+
+            <column name="id" type="UUID">
+                <constraints
+                        primaryKey="true"
+                        nullable="false"/>
+            </column>
+
+            <column name="event_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="event_type"
+                    type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="event_version"
+                    type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="source_topic"
+                    type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="payload" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="received_at"
+                    type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="available_at"
+                    type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="attempts"
+                    type="INTEGER"
+                    defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="claim_token" type="UUID"/>
+
+            <column name="last_error" type="TEXT"/>
+
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="inbox_messages"
+                columnNames="event_id"
+                constraintName="uk_inbox_messages_event_id"/>
+
+        <createIndex
+                tableName="inbox_messages"
+                indexName="idx_inbox_messages_available_at">
+
+            <column name="available_at"/>
+
+        </createIndex>
+
+    </changeSet>
+
+    <changeSet
+            id="008-tune-inbox-storage"
+            author="marcin"
+            dbms="postgresql">
+
+        <sql>
+            ALTER TABLE inbox_messages ALTER COLUMN payload SET COMPRESSION lz4;
+
+            ALTER TABLE inbox_messages SET (
+                autovacuum_vacuum_scale_factor = 0.01,
+                autovacuum_vacuum_threshold = 1000,
+                autovacuum_analyze_scale_factor = 0.02
+            );
+
+            ALTER TABLE inbox_events SET (
+                autovacuum_vacuum_scale_factor = 0.02,
+                autovacuum_vacuum_threshold = 5000
+            );
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>

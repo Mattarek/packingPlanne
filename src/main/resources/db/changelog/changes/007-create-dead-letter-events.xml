@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="
+            http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet
+            id="007-create-dead-letter-events"
+            author="marcin">
+
+        <createTable tableName="dead_letter_events">
+
+            <column name="id" type="UUID">
+                <constraints
+                        primaryKey="true"
+                        nullable="false"/>
+            </column>
+
+            <column name="event_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="event_type"
+                    type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="topic_name"
+                    type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="payload" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="reason" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="status"
+                    type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="attempts"
+                    type="INTEGER"
+                    defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="first_failed_at"
+                    type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="last_failed_at"
+                    type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="last_retried_at"
+                    type="TIMESTAMP WITH TIME ZONE"/>
+
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="dead_letter_events"
+                columnNames="event_id"
+                constraintName="uk_dead_letter_events_event_id"/>
+
+        <createIndex
+                tableName="dead_letter_events"
+                indexName="idx_dead_letter_events_status_last_failed_at">
+
+            <column name="status"/>
+            <column name="last_failed_at"/>
+
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

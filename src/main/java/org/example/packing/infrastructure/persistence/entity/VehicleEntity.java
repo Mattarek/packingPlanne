@@ -1,64 +1,87 @@
 package org.example.packing.infrastructure.persistence.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PostPersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import org.springframework.data.domain.Persistable;
+
+import java.util.UUID;
 
 @Entity
-@Table(name = "vehicules")
-public class VehicleEntity {
+@Table(name = "vehicles")
+public class VehicleEntity implements Persistable<UUID> {
 
 	@Id
-	private String id;
+	@Column(nullable = false, updatable = false)
+	private UUID id;
+
+	@Transient
+	private boolean isNew = true;
 
 	private String name;
 
-	private double lengthCm;
-	private double widthCm;
-	private double heightCm;
+	private double length;
+	private double width;
+	private double height;
 
-	private double maxPayloadKg;
+	private double maxPayload;
 
 	protected VehicleEntity() {
 	}
 
 	public VehicleEntity(
-			final String id,
+			final UUID id,
 			final String name,
-			final double lengthCm,
-			final double widthCm,
-			final double heightCm,
-			final double maxPayloadKg
+			final double length,
+			final double width,
+			final double height,
+			final double maxPayload
 	) {
 		this.id = id;
 		this.name = name;
-		this.lengthCm = lengthCm;
-		this.widthCm = widthCm;
-		this.heightCm = heightCm;
-		this.maxPayloadKg = maxPayloadKg;
+		this.length = length;
+		this.width = width;
+		this.height = height;
+		this.maxPayload = maxPayload;
 	}
 
-	public String getId() {
+	@Override
+	public UUID getId() {
 		return id;
+	}
+
+	@Override
+	public boolean isNew() {
+		return isNew;
+	}
+
+	@PostLoad
+	@PostPersist
+	void markNotNew() {
+		isNew = false;
 	}
 
 	public String getName() {
 		return name;
 	}
 
-	public double getLengthCm() {
-		return lengthCm;
+	public double getLength() {
+		return length;
 	}
 
-	public double getWidthCm() {
-		return widthCm;
+	public double getWidth() {
+		return width;
 	}
 
-	public double getHeightCm() {
-		return heightCm;
+	public double getHeight() {
+		return height;
 	}
 
-	public double getMaxPayloadKg() {
-		return maxPayloadKg;
+	public double getMaxPayload() {
+		return maxPayload;
 	}
 }
